@@ -1,26 +1,9 @@
-<!DOCTYPE html>
-<html>
-<head>
-  <title>Physics 367</title>
-  <link rel="stylesheet" type="text/css" href="style.css" />
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-</head>
-<body>
-  <main>
-    <header>
-      <h1>Computational Physics Lab</h1>
-      <h2>Physics 36x pair planning</h2>
-    </header>
+{% extends "base.html" %}
 
-    <article>
-
-      <ol>
-        {% for day in days %}
-        <li><a href="/day/{{ day.id }}">{{ day }}</a></li>
-        {% endfor %}
-      </ol>
-
-    </article>
-  </main>
-</body>
+{% block content %}
+<ol>
+  {% for day in days %}
+  <li><a href="/day-{{ day.id }}">{{ day }}</a></li>
+  {% endfor %}
+</ol>
+{% endblock %}
