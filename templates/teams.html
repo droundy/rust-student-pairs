@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+
+{% block content %}
+<ol>
+  {% for s in teams %}
+  <li>
+    {{ s }}
+    <form action="/teams" method="post">
+      <label for="name">Rename:</label>
+      <input type="hidden" id="id" name="id" value="{{s.id}}"/>
+      <input type="text" id="name" name="name"/>
+    </form>
+  </li>
+  {% endfor %}
+  <li>
+    <form action="/teams" method="post">
+      <label for="name">New team:</label>
+      <input type="hidden" id="id" name="id" value="1000000"/>
+      <input type="text" id="name" name="name" autofocus/>
+    </form>
+  </li>
+</ol>
+{% endblock %}

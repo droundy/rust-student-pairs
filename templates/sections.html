@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+
+{% block content %}
+<ol>
+  {% for s in sections %}
+  <li>
+    {{ s }}
+    <form action="/sections" method="post">
+      <label for="name">Rename:</label>
+      <input type="hidden" id="id" name="id" value="{{s.id}}"/>
+      <input type="text" id="name" name="name"/>
+    </form>
+  </li>
+  {% endfor %}
+  <li>
+    <form action="/sections" method="post">
+      <label for="name">New section:</label>
+      <input type="hidden" id="id" name="id" value="1000000"/>
+      <input type="text" id="name" name="name"/>
+    </form>
+  </li>
+</ol>
+{% endblock %}
