@@ -1,0 +1,87 @@
+{% load staticfiles %}
+
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Physics 367</title>
+  <link rel="stylesheet" type="text/css" href="{% static 'pairings/grid.css' %}" />
+  <script type="text/x-mathjax-config">
+    MathJax.Hub.Config({
+    tex2jax: {inlineMath: [['$','$'], ['\\(','\\)']]},
+    TeX: { equationNumbers: { autoNumber: "AMS" } },
+    "HTML-CSS": { availableFonts: ["TeX"] }
+    });
+  </script>
+  <script type="text/javascript"
+          src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS_HTML">
+  </script>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+</head>
+<body>
+  <main>
+    <header>
+      <h1>Physics 367 {{ day }}</h1>
+    </header>
+
+    <nav>
+      <ul>
+
+        <li><a href="{% url 'pairings:students' day.id %}">student list</a></li>
+        <li><a href="{% url 'pairings:pairs' day.id %}">pairs list</a></li>
+        <li><a href="{% url 'pairings:index' %}">list of days</a></li>
+        <li><a href="{% url 'pairings:grid' prev %}">prev</a></li>
+        <li><a href="{% url 'pairings:grid' next %}">next</a></li>
+        <li><form style="margin-left:3em" method="post">
+          {% csrf_token %}
+          <button type="submit" name="randomize" value="randomize">Randomize</button>
+        <li></form></li>
+      </ul>
+    </nav>
+
+<table style="font-size:1em"cellspacing="0" cellpadding="0">
+  <tr><th></th>
+    {% for s in students %}
+    <th class="top" style="color:{{s.color}}{%if s.tuesday%}{%endif%}"><div>{{ s }}</div></th>
+    {% endfor %}
+  </tr>
+  {% for row in grid %}
+  <tr>
+    {% for c in row %}
+    {% if forloop.counter == 1 %}
+    <th style="text-align:right;color:{{ c.color }}{%if c.tuesday%};font-style:italic{%endif%}">{{ c }}</td>
+    {% else %}
+    <td align="center" style="padding=0">
+      <form method="post" style="margin:0">
+        {% csrf_token %}
+        <button type="submit"
+                style="background-color:{{c.color}};
+                       margin:0;
+                       width:{{c.width}}; height:1.5em"
+                name="change" value="{{c.studentpair}}">
+          {{c.buttonstat}}
+        </button>
+      </form>
+    </td>
+    {% endif %}
+    {% endfor %}
+    <th style="text-align:left;color:{{ row.0.color }}{%if row.0.tuesday%};font-style:italic{%endif%}">{{ row.0 }}</td>
+  </tr>
+  {% endfor %}
+  <tr><th></th>
+    {% for s in students %}
+    <th class="bottom" style="color:{{s.color}}{%if s.tuesday%}{%endif%}"><div>{{ s }}</div></th>
+    {% endfor %}
+  </tr>
+  <!-- {% for srow in students %} -->
+  <!-- <tr> -->
+  <!--   <th>{{ srow }}</th> -->
+  <!--   {% for s in students %} -->
+  <!--   <td>{{ students.forloop.counter }}</td> -->
+  <!--   {% endfor %} -->
+  <!-- </tr> -->
+  <!-- {% endfor %} -->
+</table>
+
+  </main>
+</body>

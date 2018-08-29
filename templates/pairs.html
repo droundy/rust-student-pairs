@@ -1,0 +1,53 @@
+{% load staticfiles %}
+
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Physics 367</title>
+  <link rel="stylesheet" type="text/css" href="{% static 'pairings/style.css' %}" />
+  <script type="text/x-mathjax-config">
+    MathJax.Hub.Config({
+    tex2jax: {inlineMath: [['$','$'], ['\\(','\\)']]},
+    TeX: { equationNumbers: { autoNumber: "AMS" } },
+    "HTML-CSS": { availableFonts: ["TeX"] }
+    });
+  </script>
+  <script type="text/javascript"
+          src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS_HTML">
+  </script>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+</head>
+<body>
+  <main>
+    <header>
+      <h1>Physics 367 {{ day }}</h1>
+      <h2>Pairs list</h2>
+    </header>
+
+    <nav>
+      <ul>
+        <li><a href="{% url 'pairings:grid' day.id %}">back to grid</a></li>
+        <li><a href="{% url 'pairings:students' day.id %}">student list</a></li>
+        <li><a href="{% url 'pairings:pairs' prev %}">prev</a></li>
+        <li><a href="{% url 'pairings:pairs' next %}">next</a></li>
+      </ul>
+    </nav>
+
+    <article>
+
+      <table>
+        {% for p in pairs %}
+        <tr>
+          <th align="right">{{p.account}}</th>
+          {% for s in p.students %}
+          <td>{{ s }}</td>
+          {% endfor %}
+          <td>{{ p.section }}</td>
+        </tr>
+        {% endfor %}
+      </table>
+
+    </article>
+  </main>
+</body>

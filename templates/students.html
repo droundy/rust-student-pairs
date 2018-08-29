@@ -1,0 +1,61 @@
+{% load staticfiles %}
+
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Physics 367</title>
+  <link rel="stylesheet" type="text/css" href="{% static 'pairings/style.css' %}" />
+  <script type="text/x-mathjax-config">
+    MathJax.Hub.Config({
+    tex2jax: {inlineMath: [['$','$'], ['\\(','\\)']]},
+    TeX: { equationNumbers: { autoNumber: "AMS" } },
+    "HTML-CSS": { availableFonts: ["TeX"] }
+    });
+  </script>
+  <script type="text/javascript"
+          src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS_HTML">
+  </script>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+</head>
+<body>
+  <main>
+    <header>
+      <h1>Physics 367 {{ day }}</h1>
+      <h2>Student list</h2>
+    </header>
+
+    <nav>
+      <ul>
+        <li><a href="{% url 'pairings:grid' day.id %}">back to grid</a></li>
+        <li><a href="{% url 'pairings:pairs' day.id %}">pairs list</a></li>
+        <li><a href="{% url 'pairings:students' prev %}">prev</a></li>
+        <li><a href="{% url 'pairings:students' next %}">next</a></li>
+      </ul>
+    </nav>
+
+    <article>
+
+      <table>
+        {% for a in info %}
+        <tr>
+          <form action="{% url 'pairings:students' day.id %}" method="post">
+            {% csrf_token %}
+            <th align="right">{{a.student}}</th>
+            <td>{{ a.pair }}</td>
+            <td><select id="id_section" name="section-{{a.student}}" onchange="this.form.submit()">
+                <option value="" {% if a.isthursday == None %}selected="selected"{% endif %}>absent</option>
+                <option value="True" {% if a.isthursday == True %}selected="selected"{% endif %}>Thursday</option>
+                <option value="False" {% if a.isthursday == False %}selected="selected"{% endif %}>Tuesday</option>
+            </select></td>
+            <td style="color:{{a.color}}">{{a.partner}}</td>
+          </form>
+        </tr>
+        {% endfor %}
+      </table>
+
+    </article>
+  </main>
+</body>
+
+
