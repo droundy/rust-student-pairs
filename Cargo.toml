@@ -6,10 +6,12 @@ authors = ["droundy <roundyd@physics.oregonstate.edu>"]
 build = "build.rs"
 
 [dependencies]
-actix-web = "0.7"
+rouille = "2.1.0"
 serde = "1.0"
 serde_derive = "1.0"
+serde_yaml = "0.7"
 askama = "0.7"
+tempfile = "3.0.3"
 
 [build-dependencies]
 askama = "0.7"
