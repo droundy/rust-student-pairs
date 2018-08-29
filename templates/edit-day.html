@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h1>Edit {{ today }}</h1>
+
+<h2>{{unassigned.len()}} unassigned students</h2>
+<ol>
+  {% for s in unassigned %}
+  <li>
+    {{ s }}
+  </li>
+  {% endfor %}
+</ol>
+
+<h2>{{absent.len()}} absent students</h2>
+<ol>
+  {% for s in absent %}
+  <li>
+    {{ s }}
+  </li>
+  {% endfor %}
+</ol>
+
+
+<form action="/day/{{ today.id }}" method="post">
+  <input type="submit" name="action" value="Shuffle"/>
+</form>
+<form action="/day/{{ today.id }}" method="post">
+  <input type="submit" name="action" value="Clear all"/>
+</form>
+
+{% endblock %}

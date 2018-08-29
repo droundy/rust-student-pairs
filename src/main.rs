@@ -23,32 +23,39 @@ struct HelloTemplate {
 //     Ok(hello.render().unwrap())
 // }
 
-#[derive(Template, Serialize, Deserialize, Clone)]
+#[derive(Template, Serialize, Deserialize, Clone, PartialEq, Eq)]
 #[template(path = "day.html")]
 struct Day {
     id: usize,
     pairings: Vec<Pairing>,
 }
+#[derive(Template, Serialize, Deserialize, Clone)]
+#[template(path = "edit-day.html")]
+struct EditDay {
+    today: Day,
+    unassigned: Vec<Student>,
+    absent: Vec<Student>,
+}
 
-#[derive(Template, Serialize, Deserialize, Clone, Debug)]
+#[derive(Template, Serialize, Deserialize, Clone, Debug, PartialEq, Eq)]
 #[template(path = "student.html")]
 struct Student {
     id: usize,
     name: String,
 }
-#[derive(Template, Serialize, Deserialize, Clone, Debug)]
+#[derive(Template, Serialize, Deserialize, Clone, Debug, PartialEq, Eq)]
 #[template(path = "student.html")]
 struct Section {
     id: usize,
     name: String,
 }
-#[derive(Template, Serialize, Deserialize, Clone, Debug)]
+#[derive(Template, Serialize, Deserialize, Clone, Debug, PartialEq, Eq)]
 #[template(path = "student.html")]
 struct Team {
     id: usize,
     name: String,
 }
-#[derive(Serialize, Deserialize, Clone)]
+#[derive(Serialize, Deserialize, Clone, PartialEq, Eq)]
 enum Pairing {
     Pairing {
         section: Section,
@@ -57,6 +64,19 @@ enum Pairing {
         secondary: Option<Student>,
     },
     Absent(Student),
+}
+impl Pairing {
+    fn has(&self, s: &Student) -> bool {
+        match *self {
+            Pairing::Absent(ref x) => s == x,
+            Pairing::Pairing {primary: ref x, secondary: None, ..} => {
+                x == s
+            }
+            Pairing::Pairing {primary: ref x, secondary: Some(ref y), ..} => {
+                x == s || y == s
+            }
+        }
+    }
 }
 
 #[derive(Serialize, Deserialize, Clone)]
@@ -85,6 +105,18 @@ impl Database {
             students: Vec::new(),
             teams: Vec::new(),
         }
+    }
+    fn absent_students(&self, day: &Day) -> Vec<Student> {
+        self.students.iter()
+            .filter(|s| day.pairings.iter().any(|p| *p == Pairing::Absent((*s).clone())))
+            .cloned()
+            .collect()
+    }
+    fn unassigned_students(&self, day: &Day) -> Vec<Student> {
+        self.students.iter()
+            .filter(|s| !day.pairings.iter().any(|p| p.has(s)))
+            .cloned()
+            .collect()
     }
 }
 
@@ -127,6 +159,32 @@ fn main() {
                     days: database.days.clone(),
                 };
                 page.render().unwrap()
+            },
+            (POST) (/) => {
+                let day = Day {
+                    id: database.days.len(),
+                    pairings: Vec::new(),
+                };
+                database.days.push(day);
+                let page = Index {
+                    days: database.days.clone(),
+                };
+                page.render().unwrap()
+            },
+            (GET) (/day/{daynum: usize}) => {
+                if daynum >= database.days.len() {
+                    let page = Index {
+                        days: database.days.clone(),
+                    };
+                    page.render().unwrap()
+                } else {
+                    let page = EditDay {
+                        today: database.days[daynum].clone(),
+                        unassigned: database.unassigned_students(&database.days[daynum]),
+                        absent: database.absent_students(&database.days[daynum]),
+                    };
+                    page.render().unwrap()
+                }
             },
             (GET) (/students) => {
                 let page = Students {
