@@ -7,10 +7,12 @@ extern crate serde_derive;
 extern crate serde;
 extern crate serde_yaml;
 extern crate tempfile;
+extern crate internment;
 
 mod atomicfile;
+pub mod database;
 
-use rouille::{Request, Response};
+use rouille::{Response};
 use askama::Template;
 
 #[derive(Template, Serialize, Deserialize)]
