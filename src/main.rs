@@ -79,11 +79,6 @@ struct Database {
     teams: Vec<Team>,
 }
 impl Database {
-    fn save(&self) {
-        let f = atomicfile::AtomicFile::create("old.yaml")
-            .expect("error creating save file");
-        serde_yaml::to_writer(&f, self).expect("error writing yaml")
-    }
     fn new() -> Self {
         if let Ok(f) = ::std::fs::File::open("old.yaml") {
             if let Ok(s) = serde_yaml::from_reader::<_,Self>(&f) {
@@ -114,7 +109,7 @@ impl Database {
 #[derive(Template, Serialize, Deserialize)]
 #[template(path = "index.html")]
 struct Index {
-    days: Vec<Day>,
+    days: Vec<database::Day>,
 }
 
 #[derive(Template, Serialize, Deserialize)]
@@ -142,31 +137,27 @@ struct NewStudent {
 fn main() {
     println!("I am running now!!!");
     rouille::start_server("0.0.0.0:8088", move |request| {
-        let mut database = Database::new();
+        let database = Database::new();
         let mut data = database::Data::new();
         let html = router!{
             request,
             (GET) (/) => {
                 let page = Index {
-                    days: database.days.clone(),
+                    days: data.list_days(),
                 };
                 page.render().unwrap()
             },
             (POST) (/) => {
-                let day = Day {
-                    id: database.days.len(),
-                    pairings: Vec::new(),
-                };
-                database.days.push(day);
+                data.add_day();
                 let page = Index {
-                    days: database.days.clone(),
+                    days: data.list_days(),
                 };
                 page.render().unwrap()
             },
-            (GET) (/day/{daynum: usize}) => {
+            (GET) (/day/{daynum: database::Day}) => {
                 if daynum >= database.days.len() {
                     let page = Index {
-                        days: database.days.clone(),
+                        days: data.list_days(),
                     };
                     page.render().unwrap()
                 } else {
@@ -275,7 +266,6 @@ fn main() {
                 format!("Error: {:?}", request)
             },
         };
-        database.save();
         data.save();
         Response::html(html)
     });

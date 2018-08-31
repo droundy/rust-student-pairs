@@ -4,6 +4,7 @@ use askama::Template;
 use internment::Intern;
 use atomicfile::AtomicFile;
 use serde_yaml;
+use std::str::FromStr;
 
 #[derive(Template,Serialize,Deserialize,Clone,Copy,PartialEq,Eq)]
 #[template(path = "day.html")]
@@ -18,6 +19,12 @@ impl Day {
         } else {
             Day { id: self.id - 1 }
         }
+    }
+}
+impl FromStr for Day {
+    type Err = <usize as FromStr>::Err;
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        usize::from_str(s).map(|x| Day { id: x })
     }
 }
 
@@ -155,6 +162,12 @@ impl Data {
             .collect()
     }
 
+    pub fn list_days(&self) -> Vec<Day> {
+        (0..self.days.len()).map(|i| Day { id: i }).collect()
+    }
+    pub fn add_day(&mut self) {
+        self.days.push(HashSet::new());
+    }
     pub fn list_students(&self) -> Vec<Student> {
         let mut list: Vec<_> = self.students.iter().cloned().collect();
         list.sort();
