@@ -15,36 +15,39 @@ pub mod database;
 use rouille::{Response};
 use askama::Template;
 
+use database::{Student, Day, Team, Section, StudentOptions};
+
 #[derive(Template, Serialize, Deserialize, Clone)]
 #[template(path = "edit-day.html")]
 struct EditDay {
-    today: database::Day,
-    unassigned: Vec<database::Student>,
-    absent: Vec<database::Student>,
+    today: Day,
+    unassigned: Vec<Student>,
+    absent: Vec<Student>,
+    all: Vec<StudentOptions>,
 }
 
 #[derive(Template, Serialize, Deserialize)]
 #[template(path = "index.html")]
 struct Index {
-    days: Vec<database::Day>,
+    days: Vec<Day>,
 }
 
 #[derive(Template, Serialize, Deserialize)]
 #[template(path = "students.html")]
 struct Students {
-    students: Vec<database::Student>,
+    students: Vec<Student>,
 }
 
 #[derive(Template, Serialize, Deserialize)]
 #[template(path = "sections.html")]
 struct Sections {
-    sections: Vec<database::Section>,
+    sections: Vec<Section>,
 }
 
 #[derive(Template, Serialize, Deserialize)]
 #[template(path = "teams.html")]
 struct Teams {
-    teams: Vec<database::Team>,
+    teams: Vec<Team>,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -70,11 +73,12 @@ fn main() {
                 };
                 page.render().unwrap()
             },
-            (GET) (/day/{today: database::Day}) => {
+            (GET) (/day/{today: Day}) => {
                 let page = EditDay {
                     today: today,
                     unassigned: data.unassigned_students(today),
                     absent: data.absent_students(today),
+                    all: data.student_options(today),
                 };
                 page.render().unwrap()
             },
@@ -91,12 +95,12 @@ fn main() {
                 }) {
                     Ok(input) => {
                         if input.oldname == "" {
-                            data.new_student(database::Student::from(input.newname));
+                            data.new_student(Student::from(input.newname));
                         } else if input.newname == "" {
-                            data.delete_student(database::Student::from(input.oldname));
+                            data.delete_student(Student::from(input.oldname));
                         } else {
-                            data.rename_student(database::Student::from(input.oldname),
-                                                database::Student::from(input.newname));
+                            data.rename_student(Student::from(input.oldname),
+                                                Student::from(input.newname));
                         }
                     }
                     Err(e) => {
@@ -122,12 +126,12 @@ fn main() {
                 }) {
                     Ok(input) => {
                         if input.oldname == "" {
-                            data.new_section(database::Section::from(input.newname));
+                            data.new_section(Section::from(input.newname));
                         } else if input.newname == "" {
-                            data.delete_section(database::Section::from(input.oldname));
+                            data.delete_section(Section::from(input.oldname));
                         } else {
-                            data.rename_section(database::Section::from(input.oldname),
-                                                database::Section::from(input.newname));
+                            data.rename_section(Section::from(input.oldname),
+                                                Section::from(input.newname));
                         }
                     }
                     Err(e) => {
@@ -153,12 +157,12 @@ fn main() {
                 }) {
                     Ok(input) => {
                         if input.oldname == "" {
-                            data.new_team(database::Team::from(input.newname));
+                            data.new_team(Team::from(input.newname));
                         } else if input.newname == "" {
-                            data.delete_team(database::Team::from(input.oldname));
+                            data.delete_team(Team::from(input.oldname));
                         } else {
-                            data.rename_team(database::Team::from(input.oldname),
-                                                database::Team::from(input.newname));
+                            data.rename_team(Team::from(input.oldname),
+                                                Team::from(input.newname));
                         }
                     }
                     Err(e) => {

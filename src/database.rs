@@ -142,7 +142,26 @@ impl Data {
         }
         return &self.days[day.id];
     }
-    pub fn absent_students(&mut self, day: Day) -> Vec<Student> {
+    pub fn student_options(&self, day: Day) -> Vec<StudentOptions> {
+        let pairings = if day.id >= self.days.len() {
+            HashSet::new()
+        } else {
+            self.days[day.id].clone()
+        };
+        let mut options = Vec::new();
+        for s in self.list_students().iter().cloned() {
+            let current_pairing =  pairings.iter().filter(|p| p.has(s)).cloned().next();
+            let opt = StudentOptions {
+                day: day,
+                student: s,
+                current_pairing: current_pairing,
+                possible_teams: Vec::new(),
+            };
+            options.push(opt);
+        }
+        options
+    }
+    pub fn absent_students(&self, day: Day) -> Vec<Student> {
         if day.id >= self.days.len() {
             return Vec::new();
         }
@@ -278,4 +297,14 @@ impl Data {
             }
         }
     }
+}
+
+
+#[derive(Template, Serialize, Deserialize, Clone)]
+#[template(path = "student-options.html")]
+pub struct StudentOptions {
+    pub day: Day,
+    pub student: Student,
+    pub current_pairing: Option<Pairing>,
+    pub possible_teams: Vec<Team>,
 }
