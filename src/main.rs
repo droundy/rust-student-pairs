@@ -15,95 +15,12 @@ pub mod database;
 use rouille::{Response};
 use askama::Template;
 
-#[derive(Template, Serialize, Deserialize, Clone, PartialEq, Eq)]
-#[template(path = "day.html")]
-struct Day {
-    id: usize,
-    pairings: Vec<Pairing>,
-}
 #[derive(Template, Serialize, Deserialize, Clone)]
 #[template(path = "edit-day.html")]
 struct EditDay {
-    today: Day,
-    unassigned: Vec<Student>,
-    absent: Vec<Student>,
-}
-
-#[derive(Template, Serialize, Deserialize, Clone, Debug, PartialEq, Eq)]
-#[template(path = "student.html")]
-struct Student {
-    id: usize,
-    name: String,
-}
-#[derive(Template, Serialize, Deserialize, Clone, Debug, PartialEq, Eq)]
-#[template(path = "student.html")]
-struct Section {
-    id: usize,
-    name: String,
-}
-#[derive(Template, Serialize, Deserialize, Clone, Debug, PartialEq, Eq)]
-#[template(path = "student.html")]
-struct Team {
-    id: usize,
-    name: String,
-}
-#[derive(Serialize, Deserialize, Clone, PartialEq, Eq)]
-enum Pairing {
-    Pairing {
-        section: Section,
-        team: Team,
-        primary: Student,
-        secondary: Option<Student>,
-    },
-    Absent(Student),
-}
-impl Pairing {
-    fn has(&self, s: &Student) -> bool {
-        match *self {
-            Pairing::Absent(ref x) => s == x,
-            Pairing::Pairing {primary: ref x, secondary: None, ..} => {
-                x == s
-            }
-            Pairing::Pairing {primary: ref x, secondary: Some(ref y), ..} => {
-                x == s || y == s
-            }
-        }
-    }
-}
-
-#[derive(Serialize, Deserialize, Clone)]
-struct Database {
-    days: Vec<Day>,
-    sections: Vec<Section>,
-    students: Vec<Student>,
-    teams: Vec<Team>,
-}
-impl Database {
-    fn new() -> Self {
-        if let Ok(f) = ::std::fs::File::open("old.yaml") {
-            if let Ok(s) = serde_yaml::from_reader::<_,Self>(&f) {
-                return s;
-            }
-        }
-        Database {
-            days: Vec::new(),
-            sections: Vec::new(),
-            students: Vec::new(),
-            teams: Vec::new(),
-        }
-    }
-    fn absent_students(&self, day: &Day) -> Vec<Student> {
-        self.students.iter()
-            .filter(|s| day.pairings.iter().any(|p| *p == Pairing::Absent((*s).clone())))
-            .cloned()
-            .collect()
-    }
-    fn unassigned_students(&self, day: &Day) -> Vec<Student> {
-        self.students.iter()
-            .filter(|s| !day.pairings.iter().any(|p| p.has(s)))
-            .cloned()
-            .collect()
-    }
+    today: database::Day,
+    unassigned: Vec<database::Student>,
+    absent: Vec<database::Student>,
 }
 
 #[derive(Template, Serialize, Deserialize)]
@@ -137,7 +54,6 @@ struct NewStudent {
 fn main() {
     println!("I am running now!!!");
     rouille::start_server("0.0.0.0:8088", move |request| {
-        let database = Database::new();
         let mut data = database::Data::new();
         let html = router!{
             request,
@@ -154,20 +70,13 @@ fn main() {
                 };
                 page.render().unwrap()
             },
-            (GET) (/day/{daynum: database::Day}) => {
-                if daynum >= database.days.len() {
-                    let page = Index {
-                        days: data.list_days(),
-                    };
-                    page.render().unwrap()
-                } else {
-                    let page = EditDay {
-                        today: database.days[daynum].clone(),
-                        unassigned: database.unassigned_students(&database.days[daynum]),
-                        absent: database.absent_students(&database.days[daynum]),
-                    };
-                    page.render().unwrap()
-                }
+            (GET) (/day/{today: database::Day}) => {
+                let page = EditDay {
+                    today: today,
+                    unassigned: data.unassigned_students(today),
+                    absent: data.absent_students(today),
+                };
+                page.render().unwrap()
             },
             (GET) (/students) => {
                 let page = Students {

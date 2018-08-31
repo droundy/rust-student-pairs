@@ -3,7 +3,7 @@
 {% block content %}
 <ol>
   {% for day in days %}
-  <li><a href="/day/{{ day }}">{{ day }}</a></li>
+  <li><a href="/day/{{ day.id }}">{{ day }}</a></li>
   {% endfor %}
   <li>
     <form action="/" method="post">

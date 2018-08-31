@@ -8,7 +8,7 @@ use std::str::FromStr;
 
 #[derive(Template,Serialize,Deserialize,Clone,Copy,PartialEq,Eq)]
 #[template(path = "day.html")]
-pub struct Day { id: usize }
+pub struct Day { pub id: usize }
 impl Day {
     pub fn next(&self) -> Self {
         Day { id: self.id + 1 }
@@ -152,7 +152,7 @@ impl Data {
             .cloned()
             .collect()
     }
-    pub fn unassigned_students(&self, day: &Day) -> Vec<Student> {
+    pub fn unassigned_students(&self, day: Day) -> Vec<Student> {
         if day.id >= self.days.len() {
             return Vec::new();
         }
