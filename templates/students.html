@@ -4,19 +4,17 @@
 <ol>
   {% for s in students %}
   <li>
-    {{ s }}
     <form action="/students" method="post">
-      <label for="name">Rename:</label>
-      <input type="hidden" id="id" name="id" value="{{s.id}}"/>
-      <input type="text" id="name" name="name"/>
+      <input type="hidden" name="oldname" value="{{s.name}}"/>
+      <input type="text" name="newname" value="{{s.name}}"/>
     </form>
   </li>
   {% endfor %}
   <li>
     <form action="/students" method="post">
       <label for="name">New student:</label>
-      <input type="hidden" id="id" name="id" value="1000000"/>
-      <input type="text" id="name" name="name"/>
+      <input type="hidden" name="oldname" value=""/>
+      <input type="text" name="newname" autofocus/>
     </form>
   </li>
 </ol>

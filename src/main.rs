@@ -15,16 +15,6 @@ pub mod database;
 use rouille::{Response};
 use askama::Template;
 
-#[derive(Template, Serialize, Deserialize)]
-#[template(path = "hello.html")]
-struct HelloTemplate {
-    name: String,
-    apples: u32,
-}
-// fn hello(hello: Path<(HelloTemplate)>) -> Result<String> {
-//     Ok(hello.render().unwrap())
-// }
-
 #[derive(Template, Serialize, Deserialize, Clone, PartialEq, Eq)]
 #[template(path = "day.html")]
 struct Day {
@@ -90,13 +80,12 @@ struct Database {
 }
 impl Database {
     fn save(&self) {
-        let f = atomicfile::AtomicFile::create("pairs.yaml")
+        let f = atomicfile::AtomicFile::create("old.yaml")
             .expect("error creating save file");
         serde_yaml::to_writer(&f, self).expect("error writing yaml")
     }
     fn new() -> Self {
-        if let Ok(f) = ::std::fs::File::open("pairs.yaml") {
-            println!("Created file pairs.yaml...");
+        if let Ok(f) = ::std::fs::File::open("old.yaml") {
             if let Ok(s) = serde_yaml::from_reader::<_,Self>(&f) {
                 return s;
             }
@@ -131,7 +120,7 @@ struct Index {
 #[derive(Template, Serialize, Deserialize)]
 #[template(path = "students.html")]
 struct Students {
-    students: Vec<Student>,
+    students: Vec<database::Student>,
 }
 
 #[derive(Template, Serialize, Deserialize)]
@@ -154,6 +143,7 @@ fn main() {
     println!("I am running now!!!");
     rouille::start_server("0.0.0.0:8088", move |request| {
         let mut database = Database::new();
+        let mut data = database::Data::new();
         let html = router!{
             request,
             (GET) (/) => {
@@ -190,7 +180,7 @@ fn main() {
             },
             (GET) (/students) => {
                 let page = Students {
-                    students: database.students.clone(),
+                    students: data.students.iter().cloned().collect(),
                 };
                 page.render().unwrap()
             },
@@ -198,21 +188,17 @@ fn main() {
                 // let data = rouille::input::post::raw_urlencoded_post_input(request);
                 // println!("data is {:?}", data);
                 match post_input!(request, {
-                    id: usize,
-                    name: String,
+                    oldname: String,
+                    newname: String,
                 }) {
                     Ok(input) => {
-                        if input.id < database.students.len() {
-                            database.students[input.id] = Student {
-                                id: input.id,
-                                name: input.name,
-                            };
+                        if input.oldname == "" {
+                            data.new_student(database::Student::from(input.newname));
+                        } else if input.newname == "" {
+                            data.delete_student(database::Student::from(input.oldname));
                         } else {
-                            let student = Student {
-                                id: database.students.len(),
-                                name: input.name,
-                            };
-                            database.students.push(student);
+                            data.rename_student(database::Student::from(input.oldname),
+                                                database::Student::from(input.newname));
                         }
                     }
                     Err(e) => {
@@ -221,7 +207,7 @@ fn main() {
                     }
                 }
                 let page = Students {
-                    students: database.students.clone(),
+                    students: data.students.iter().cloned().collect(),
                 };
                 page.render().unwrap()
             },
@@ -304,6 +290,7 @@ fn main() {
             },
         };
         database.save();
+        data.save();
         Response::html(html)
     });
 }
