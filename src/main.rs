@@ -126,13 +126,13 @@ struct Students {
 #[derive(Template, Serialize, Deserialize)]
 #[template(path = "sections.html")]
 struct Sections {
-    sections: Vec<Section>,
+    sections: Vec<database::Section>,
 }
 
 #[derive(Template, Serialize, Deserialize)]
 #[template(path = "teams.html")]
 struct Teams {
-    teams: Vec<Team>,
+    teams: Vec<database::Team>,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -180,13 +180,11 @@ fn main() {
             },
             (GET) (/students) => {
                 let page = Students {
-                    students: data.students.iter().cloned().collect(),
+                    students: data.list_students(),
                 };
                 page.render().unwrap()
             },
             (POST) (/students) => {
-                // let data = rouille::input::post::raw_urlencoded_post_input(request);
-                // println!("data is {:?}", data);
                 match post_input!(request, {
                     oldname: String,
                     newname: String,
@@ -207,35 +205,29 @@ fn main() {
                     }
                 }
                 let page = Students {
-                    students: data.students.iter().cloned().collect(),
+                    students: data.list_students(),
                 };
                 page.render().unwrap()
             },
             (GET) (/sections) => {
                 let page = Sections {
-                    sections: database.sections.clone(),
+                    sections: data.list_sections(),
                 };
                 page.render().unwrap()
             },
             (POST) (/sections) => {
-                // let data = rouille::input::post::raw_urlencoded_post_input(request);
-                // println!("data is {:?}", data);
                 match post_input!(request, {
-                    id: usize,
-                    name: String,
+                    oldname: String,
+                    newname: String,
                 }) {
                     Ok(input) => {
-                        if input.id < database.sections.len() {
-                            database.sections[input.id] = Section {
-                                id: input.id,
-                                name: input.name,
-                            };
+                        if input.oldname == "" {
+                            data.new_section(database::Section::from(input.newname));
+                        } else if input.newname == "" {
+                            data.delete_section(database::Section::from(input.oldname));
                         } else {
-                            let section = Section {
-                                id: database.sections.len(),
-                                name: input.name,
-                            };
-                            database.sections.push(section);
+                            data.rename_section(database::Section::from(input.oldname),
+                                                database::Section::from(input.newname));
                         }
                     }
                     Err(e) => {
@@ -244,35 +236,29 @@ fn main() {
                     }
                 }
                 let page = Sections {
-                    sections: database.sections.clone(),
+                    sections: data.list_sections(),
                 };
                 page.render().unwrap()
             },
             (GET) (/teams) => {
                 let page = Teams {
-                    teams: database.teams.clone(),
+                    teams: data.list_teams(),
                 };
                 page.render().unwrap()
             },
             (POST) (/teams) => {
-                // let data = rouille::input::post::raw_urlencoded_post_input(request);
-                // println!("data is {:?}", data);
                 match post_input!(request, {
-                    id: usize,
-                    name: String,
+                    oldname: String,
+                    newname: String,
                 }) {
                     Ok(input) => {
-                        if input.id < database.teams.len() {
-                            database.teams[input.id] = Team {
-                                id: input.id,
-                                name: input.name,
-                            };
+                        if input.oldname == "" {
+                            data.new_team(database::Team::from(input.newname));
+                        } else if input.newname == "" {
+                            data.delete_team(database::Team::from(input.oldname));
                         } else {
-                            let team = Team {
-                                id: database.teams.len(),
-                                name: input.name,
-                            };
-                            database.teams.push(team);
+                            data.rename_team(database::Team::from(input.oldname),
+                                                database::Team::from(input.newname));
                         }
                     }
                     Err(e) => {
@@ -281,7 +267,7 @@ fn main() {
                     }
                 }
                 let page = Teams {
-                    teams: database.teams.clone(),
+                    teams: data.list_teams(),
                 };
                 page.render().unwrap()
             },

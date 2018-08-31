@@ -24,6 +24,11 @@ impl Day {
 #[derive(Template,Serialize,Deserialize,Clone,Copy,Debug,PartialEq,Eq,PartialOrd,Ord,Hash)]
 #[template(path = "section.html")]
 pub struct Section { pub name: Intern<String> }
+impl From<String> for Section {
+    fn from(s: String) -> Self {
+        Section { name: Intern::new(s) }
+    }
+}
 
 #[derive(Template,Serialize,Deserialize,Clone,Copy,Debug,PartialEq,Eq,PartialOrd,Ord,Hash)]
 #[template(path = "section.html")]
@@ -36,7 +41,12 @@ impl From<String> for Student {
 
 #[derive(Template,Serialize,Deserialize,Clone,Copy,Debug,PartialEq,Eq,PartialOrd,Ord,Hash)]
 #[template(path = "section.html")]
-pub struct Team { name: Intern<String> }
+pub struct Team { pub name: Intern<String> }
+impl From<String> for Team {
+    fn from(s: String) -> Self {
+        Team { name: Intern::new(s) }
+    }
+}
 
 #[derive(Serialize,Deserialize,Clone,Copy,PartialEq,Eq,PartialOrd,Ord,Hash)]
 pub enum Pairing {
@@ -74,6 +84,22 @@ impl Pairing {
     pub fn has(&self, s: Student) -> bool {
         self.allocated_students().contains(&s)
     }
+    pub fn section(&self) -> Option<Section> {
+        use database::Pairing::*;
+        match *self {
+            Absent( _ ) => None,
+            Solo { section, .. } => Some(section),
+            Pair { section, .. } => Some(section),
+        }
+    }
+    pub fn team(&self) -> Option<Team> {
+        use database::Pairing::*;
+        match *self {
+            Absent( _ ) => None,
+            Solo { team, .. } => Some(team),
+            Pair { team, .. } => Some(team),
+        }
+    }
 }
 
 #[derive(Serialize,Deserialize,Clone,PartialEq,Eq)]
@@ -92,7 +118,6 @@ impl Data {
     }
     pub fn new() -> Self {
         if let Ok(f) = ::std::fs::File::open("pairs.yaml") {
-            println!("Created file pairs.yaml...");
             if let Ok(s) = serde_yaml::from_reader::<_,Self>(&f) {
                 return s;
             }
@@ -130,6 +155,11 @@ impl Data {
             .collect()
     }
 
+    pub fn list_students(&self) -> Vec<Student> {
+        let mut list: Vec<_> = self.students.iter().cloned().collect();
+        list.sort();
+        list
+    }
     pub fn new_student(&mut self, s: Student) {
         self.students.insert(s);
     }
@@ -145,8 +175,11 @@ impl Data {
             for mut p in problems {
                 d.remove(&p);
                 match p {
-                    Absent(ref mut s) if *s == old_s => {
+                    Absent(ref mut s) => {
                         *s = new_s;
+                    }
+                    Solo { ref mut student, .. } => {
+                        *student = new_s;
                     }
                     Pair { ref mut primary, .. } if *primary == old_s => {
                         *primary = new_s;
@@ -154,8 +187,77 @@ impl Data {
                     Pair { ref mut secondary, .. } if *secondary == old_s => {
                         *secondary = new_s;
                     }
-                    Solo { ref mut student, .. } if *student == old_s => {
-                        *student = new_s;
+                    _ => (),
+                }
+                d.insert(p);
+            }
+        }
+    }
+
+    pub fn list_sections(&self) -> Vec<Section> {
+        let mut list: Vec<_> = self.sections.iter().cloned().collect();
+        list.sort();
+        list
+    }
+    pub fn new_section(&mut self, s: Section) {
+        self.sections.insert(s);
+    }
+    pub fn delete_section(&mut self, s: Section) {
+        self.sections.remove(&s);
+        for d in self.days.iter_mut() {
+            d.retain(|p| p.section() != Some(s));
+        }
+    }
+    pub fn rename_section(&mut self, old_s: Section, new_s: Section) {
+        use database::Pairing::*;
+        self.sections.insert(new_s);
+        self.sections.remove(&old_s);
+        for d in self.days.iter_mut() {
+            let problems: Vec<_> = d.iter().cloned().filter(|&p| p.section() == Some(old_s)).collect();
+            for mut p in problems {
+                d.remove(&p);
+                match p {
+                    Pair { ref mut section, .. } => {
+                        *section = new_s;
+                    }
+                    Solo { ref mut section, .. } => {
+                        *section = new_s;
+                    }
+                    _ => (),
+                }
+                d.insert(p);
+            }
+        }
+    }
+
+    pub fn list_teams(&self) -> Vec<Team> {
+        let mut list: Vec<_> = self.teams.iter().cloned().collect();
+        list.sort();
+        list
+    }
+    pub fn new_team(&mut self, s: Team) {
+        self.teams.insert(s);
+    }
+    pub fn delete_team(&mut self, s: Team) {
+        self.teams.remove(&s);
+        for d in self.days.iter_mut() {
+            d.retain(|p| p.team() != Some(s));
+        }
+    }
+    pub fn rename_team(&mut self, old_s: Team, new_s: Team) {
+        use database::Pairing::*;
+        self.teams.insert(new_s);
+        self.teams.remove(&old_s);
+        for d in self.days.iter_mut() {
+            let problems: Vec<_> = d.iter().cloned().filter(|&p| p.team() == Some(old_s)).collect();
+            for mut p in problems {
+                d.remove(&p);
+                match p {
+                    Pair { ref mut team, .. } => {
+                        *team = new_s;
+                    }
+                    Solo { ref mut team, .. } => {
+                        *team = new_s;
                     }
                     _ => (),
                 }
