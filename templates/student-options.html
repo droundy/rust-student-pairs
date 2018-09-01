@@ -1,5 +1,6 @@
 <form action="/day/{{day.id}}" method="post">
   {{ student }}
+  <input type="hidden" name="student" value="{{student}}"/>
   <select name="team" onchange="this.form.submit()">
     <option value="">-</option>
     {% for t in possible_teams %}

@@ -35,7 +35,7 @@ struct Index {
 #[derive(Template, Serialize, Deserialize)]
 #[template(path = "students.html")]
 struct Students {
-    students: Vec<Student>,
+    sections: Vec<(Section, Vec<Student>)>,
 }
 
 #[derive(Template, Serialize, Deserialize)]
@@ -82,20 +82,49 @@ fn main() {
                 };
                 page.render().unwrap()
             },
+            (POST) (/day/{today: Day}) => {
+                match post_input!(request, {
+                    team: String,
+                    section: String,
+                    student: String,
+                }) {
+                    Ok(input) => {
+                        println!("assigning {} to {:?} {:?}", input.student,
+                                 input.section, input.team);
+                        data.assign_student(today,
+                                            Student::from(input.student),
+                                            Section::from(input.section),
+                                            Team::from(input.team));
+                    }
+                    Err(e) => {
+                        return Response::text(format!("Post students error: {:?}\n\n{:?}",
+                                                      request, e));
+                    }
+                }
+                let page = EditDay {
+                    today: today,
+                    unassigned: data.unassigned_students(today),
+                    absent: data.absent_students(today),
+                    all: data.student_options(today),
+                };
+                page.render().unwrap()
+            },
             (GET) (/students) => {
                 let page = Students {
-                    students: data.list_students(),
+                    sections: data.list_students_by_section(),
                 };
                 page.render().unwrap()
             },
             (POST) (/students) => {
                 match post_input!(request, {
+                    section: String,
                     oldname: String,
                     newname: String,
                 }) {
                     Ok(input) => {
                         if input.oldname == "" {
-                            data.new_student(Student::from(input.newname));
+                            data.new_student(Student::from(input.newname),
+                                             Section::from(input.section));
                         } else if input.newname == "" {
                             data.delete_student(Student::from(input.oldname));
                         } else {
@@ -109,7 +138,7 @@ fn main() {
                     }
                 }
                 let page = Students {
-                    students: data.list_students(),
+                    sections: data.list_students_by_section(),
                 };
                 page.render().unwrap()
             },

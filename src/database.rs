@@ -1,4 +1,4 @@
-use std::collections::HashSet;
+use std::collections::{HashSet, HashMap};
 // use std::hash::Hash;
 use askama::Template;
 use internment::Intern;
@@ -68,6 +68,10 @@ pub enum Pairing {
         team: Team,
         student: Student,
     },
+    Unassigned {
+        section: Section,
+        student: Student,
+    },
     Absent(Student),
 }
 
@@ -84,6 +88,7 @@ impl Pairing {
         match *self {
             Absent(_) => Vec::new(),
             Solo { student, .. } => vec![student],
+            Unassigned { student, .. } => vec![student],
             Pair { primary, secondary, .. } => vec![primary, secondary],
         }
     }
@@ -92,6 +97,7 @@ impl Pairing {
         match *self {
             Absent( student ) => vec![student],
             Solo { student, .. } => vec![student],
+            Unassigned { .. } => Vec::new(),
             Pair { primary, secondary, .. } => vec![primary, secondary],
         }
     }
@@ -103,6 +109,7 @@ impl Pairing {
         match *self {
             Absent( _ ) => None,
             Solo { section, .. } => Some(section),
+            Unassigned { section, .. } => Some(section),
             Pair { section, .. } => Some(section),
         }
     }
@@ -110,6 +117,7 @@ impl Pairing {
         use database::Pairing::*;
         match *self {
             Absent( _ ) => None,
+            Unassigned { .. } => None,
             Solo { team, .. } => Some(team),
             Pair { team, .. } => Some(team),
         }
@@ -118,7 +126,7 @@ impl Pairing {
 
 #[derive(Serialize,Deserialize,Clone,PartialEq,Eq)]
 pub struct Data {
-    pub students: HashSet<Student>,
+    student_sections: HashMap<Student, Section>,
     sections: HashSet<Section>,
     teams: HashSet<Team>,
     days: Vec<HashSet<Pairing>>,
@@ -139,7 +147,7 @@ impl Data {
         Data {
             days: Vec::new(),
             sections: HashSet::new(),
-            students: HashSet::new(),
+            student_sections: HashMap::new(),
             teams: HashSet::new(),
         }
     }
@@ -164,7 +172,7 @@ impl Data {
                 current_pairing: current_pairing,
                 possible_teams: Vec::new(),
                 possible_sections: self.sections.iter().cloned().collect(),
-                default_section: self.sections.iter().cloned().next().unwrap(),
+                default_section: self.student_sections[&s],
             };
             for t in self.teams.iter() {
                 if pairings.iter().filter(|p| !(p.team() == Some(*t) && p.full_pair()))
@@ -177,13 +185,14 @@ impl Data {
             opt.possible_sections.sort();
             options.push(opt);
         }
+        options.sort_by_key(|o| o.current_section());
         options
     }
     pub fn absent_students(&self, day: Day) -> Vec<Student> {
         if day.id >= self.days.len() {
             return Vec::new();
         }
-        self.students.iter()
+        self.student_sections.keys()
             .filter(|s| self.days[day.id].iter()
                     .any(|p| *p == Pairing::Absent((*s).clone())))
             .cloned()
@@ -193,7 +202,7 @@ impl Data {
         if day.id >= self.days.len() {
             return Vec::new();
         }
-        self.students.iter()
+        self.student_sections.keys()
             .cloned()
             .filter(|&s| !self.days[day.id].iter().any(|p| p.has(s)))
             .collect()
@@ -206,20 +215,44 @@ impl Data {
         self.days.push(HashSet::new());
     }
     pub fn list_students(&self) -> Vec<Student> {
-        let mut list: Vec<_> = self.students.iter().cloned().collect();
+        let mut list: Vec<_> = self.student_sections.keys().cloned().collect();
         list.sort();
         list
     }
-    pub fn new_student(&mut self, s: Student) {
-        self.students.insert(s);
+    pub fn list_students_by_section(&self) -> Vec<(Section, Vec<Student>)> {
+        let mut list = Vec::new();
+        for section in self.sections.iter().cloned() {
+            let mut students: Vec<Student> = self.student_sections.iter()
+                .filter(|(_,&sec)| sec == section)
+                .map(|(&s,_)| s)
+                .collect();
+            students.sort();
+            list.push((section, students));
+        }
+        list.sort();
+        list
+    }
+    pub fn assign_student(&mut self, day: Day, student: Student,
+                          section: Section, team: Team) {
+        if section == Section::from("".to_string()) {
+            println!("Should mark {} as absent", student);
+        } else if team == Team::from("".to_string()) {
+            println!("Should mark {} as unassigned in section {}", student, section);
+        } else {
+            println!("Should mark {} as on team {} in section {}", student, team, section);
+        }
+    }
+    pub fn new_student(&mut self, s: Student, section: Section) {
+        self.student_sections.insert(s, section);
     }
     pub fn delete_student(&mut self, s: Student) {
-        self.students.remove(&s);
+        self.student_sections.remove(&s);
     }
     pub fn rename_student(&mut self, old_s: Student, new_s: Student) {
         use database::Pairing::*;
-        self.students.insert(new_s);
-        self.students.remove(&old_s);
+        if let Some(section) = self.student_sections.remove(&old_s) {
+            self.student_sections.insert(new_s, section);
+        }
         for d in self.days.iter_mut() {
             let problems: Vec<_> = d.iter().cloned().filter(|&p| p.has(old_s)).collect();
             for mut p in problems {
@@ -229,6 +262,9 @@ impl Data {
                         *s = new_s;
                     }
                     Solo { ref mut student, .. } => {
+                        *student = new_s;
+                    }
+                    Unassigned { ref mut student, .. } => {
                         *student = new_s;
                     }
                     Pair { ref mut primary, .. } if *primary == old_s => {
@@ -271,6 +307,9 @@ impl Data {
                         *section = new_s;
                     }
                     Solo { ref mut section, .. } => {
+                        *section = new_s;
+                    }
+                    Unassigned { ref mut section, .. } => {
                         *section = new_s;
                     }
                     _ => (),
@@ -334,16 +373,21 @@ impl StudentOptions {
         match self.current_pairing {
             None => false,
             Some(Pairing::Absent(_)) => false,
+            Some(Pairing::Unassigned { .. }) => false,
             Some(Pairing::Solo { team, .. }) => team == *t,
             Some(Pairing::Pair { team, .. }) => team == *t,
         }
     }
     fn is_current_section(&self, s: &Section) -> bool {
+        Some(*s) == self.current_section()
+    }
+    fn current_section(&self) -> Option<Section> {
         match self.current_pairing {
-            None => *s == self.default_section,
-            Some(Pairing::Absent(_)) => false,
-            Some(Pairing::Solo { section, .. }) => section == *s,
-            Some(Pairing::Pair { section, .. }) => section == *s,
+            None => Some(self.default_section),
+            Some(Pairing::Absent(_)) => None,
+            Some(Pairing::Unassigned { section, .. }) => Some(section),
+            Some(Pairing::Solo { section, .. }) => Some(section),
+            Some(Pairing::Pair { section, .. }) => Some(section),
         }
     }
 }

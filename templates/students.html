@@ -1,10 +1,13 @@
 {% extends "base.html" %}
 
 {% block content %}
+{% for secstudents in sections %}
+<h2>{{ secstudents.0 }}</h2>
 <ol>
-  {% for s in students %}
+  {% for s in secstudents.1 %}
   <li>
     <form action="/students" method="post">
+      <input type="hidden" name="section" value="{{secstudents.0}}"/>
       <input type="hidden" name="oldname" value="{{s.name}}"/>
       <input type="text" name="newname" value="{{s.name}}"/>
     </form>
@@ -13,9 +16,11 @@
   <li>
     <form action="/students" method="post">
       <label for="name">New student:</label>
+      <input type="hidden" name="section" value="{{secstudents.0}}"/>
       <input type="hidden" name="oldname" value=""/>
       <input type="text" name="newname" autofocus/>
     </form>
   </li>
 </ol>
+{% endfor %}
 {% endblock %}
