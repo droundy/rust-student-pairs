@@ -72,6 +72,13 @@ pub enum Pairing {
 }
 
 impl Pairing {
+    pub fn full_pair(&self) -> bool {
+        if let Pairing::Pair { .. } = *self {
+            true
+        } else {
+            false
+        }
+    }
     pub fn present_students(&self) -> Vec<Student> {
         use database::Pairing::*;
         match *self {
@@ -150,13 +157,21 @@ impl Data {
         };
         let mut options = Vec::new();
         for s in self.list_students().iter().cloned() {
-            let current_pairing =  pairings.iter().filter(|p| p.has(s)).cloned().next();
-            let opt = StudentOptions {
+            let current_pairing = pairings.iter().filter(|p| p.has(s)).cloned().next();
+            let mut opt = StudentOptions {
                 day: day,
                 student: s,
                 current_pairing: current_pairing,
                 possible_teams: Vec::new(),
             };
+            for t in self.teams.iter() {
+                if pairings.iter().filter(|p| !(p.team() == Some(*t) && p.full_pair()))
+                    .next().is_none()
+                {
+                    opt.possible_teams.push(*t);
+                }
+            }
+            opt.possible_teams.sort();
             options.push(opt);
         }
         options
@@ -307,4 +322,15 @@ pub struct StudentOptions {
     pub student: Student,
     pub current_pairing: Option<Pairing>,
     pub possible_teams: Vec<Team>,
+}
+
+impl StudentOptions {
+    fn current_team(&self) -> Team {
+        match self.current_pairing {
+            None => Team { name: Intern::new("unassigned".to_string()) },
+            Some(Pairing::Absent(_)) => Team { name: Intern::new("absent".to_string()) },
+            Some(Pairing::Solo { team, .. }) => team,
+            Some(Pairing::Pair { team, .. }) => team,
+        }
+    }
 }

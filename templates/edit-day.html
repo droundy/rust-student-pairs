@@ -7,7 +7,7 @@
 <ol>
   {% for s in all %}
   <li>
-    {{ s }}
+    {{ s|safe }}
   </li>
   {% endfor %}
 </ol>
@@ -16,7 +16,7 @@
 <ol>
   {% for s in unassigned %}
   <li>
-    {{ s }}
+    {{ s}}
   </li>
   {% endfor %}
 </ol>
