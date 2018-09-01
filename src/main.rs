@@ -36,6 +36,7 @@ struct Index {
 #[template(path = "students.html")]
 struct Students {
     sections: Vec<(Section, Vec<Student>)>,
+    focus_section: Section,
 }
 
 #[derive(Template, Serialize, Deserialize)]
@@ -112,16 +113,19 @@ fn main() {
             (GET) (/students) => {
                 let page = Students {
                     sections: data.list_students_by_section(),
+                    focus_section: Section::from("".to_string()),
                 };
                 page.render().unwrap()
             },
             (POST) (/students) => {
+                let focus_section;
                 match post_input!(request, {
                     section: String,
                     oldname: String,
                     newname: String,
                 }) {
                     Ok(input) => {
+                        focus_section = Section::from(input.section.clone());
                         if input.oldname == "" {
                             data.new_student(Student::from(input.newname),
                                              Section::from(input.section));
@@ -139,6 +143,7 @@ fn main() {
                 }
                 let page = Students {
                     sections: data.list_students_by_section(),
+                    focus_section: focus_section,
                 };
                 page.render().unwrap()
             },

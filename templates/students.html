@@ -18,7 +18,8 @@
       <label for="name">New student:</label>
       <input type="hidden" name="section" value="{{secstudents.0}}"/>
       <input type="hidden" name="oldname" value=""/>
-      <input type="text" name="newname" autofocus/>
+      <input type="text" name="newname" {%
+             if secstudents.0 == focus_section %}autofocus{% endif %}/>
     </form>
   </li>
 </ol>
