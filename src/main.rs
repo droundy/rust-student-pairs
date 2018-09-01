@@ -88,14 +88,26 @@ fn main() {
                     team: String,
                     section: String,
                     student: String,
+                    action: String,
                 }) {
                     Ok(input) => {
-                        println!("assigning {} to {:?} {:?}", input.student,
-                                 input.section, input.team);
-                        data.assign_student(today,
-                                            Student::from(input.student),
-                                            Section::from(input.section),
-                                            Team::from(input.team));
+                        if input.action == "student" {
+                            println!("assigning {} to {:?} {:?}", input.student,
+                                     input.section, input.team);
+                            data.assign_student(today,
+                                                Student::from(input.student),
+                                                Section::from(input.section),
+                                                Team::from(input.team));
+                        } else if input.action == "Shuffle" {
+                            println!("I should be shuffling...");
+                        } else if input.action == "Clear all" {
+                            println!("I should be clearing all...");
+                            for s in data.list_students().iter().cloned() {
+                                data.unpair_student(today, s);
+                            }
+                        } else {
+                            println!("What do I do with action {}?", input.action);
+                        }
                     }
                     Err(e) => {
                         return Response::text(format!("Post students error: {:?}\n\n{:?}",

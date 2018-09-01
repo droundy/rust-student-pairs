@@ -303,6 +303,17 @@ impl Data {
             }
         }
     }
+    pub fn unpair_student(&mut self, day: Day, student: Student) {
+        let section = match self.days[day.id].iter().cloned().filter(|p| p.has(student)).next() {
+            Some(Pairing::Pair { section, .. }) => section,
+            Some(Pairing::Solo { section, .. }) => section,
+            Some(Pairing::Unassigned { section, .. }) => section,
+            Some(Pairing::Absent(_)) => { return; }
+            None => { return; }
+        };
+        self.unassign_student(day, student);
+        self.days[day.id].insert(Pairing::Unassigned { student, section });
+    }
     pub fn new_student(&mut self, s: Student, section: Section) {
         self.student_sections.insert(s, section);
     }

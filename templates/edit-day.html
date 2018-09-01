@@ -3,6 +3,14 @@
 {% block content %}
 <h1>Edit {{ today }}</h1>
 
+<form action="/day/{{ today.id }}" method="post">
+  <input type="hidden" name="student" value=""/>
+  <input type="hidden" name="section" value=""/>
+  <input type="hidden" name="team" value=""/>
+  <input type="submit" name="action" value="Shuffle"/>
+  <input type="submit" name="action" value="Clear all"/>
+</form>
+
 <h2>{{all.len()}} students</h2>
 <ol>
   {% for s in all %}
@@ -29,13 +37,5 @@
   </li>
   {% endfor %}
 </ol>
-
-
-<form action="/day/{{ today }}" method="post">
-  <input type="submit" name="action" value="Shuffle"/>
-</form>
-<form action="/day/{{ today }}" method="post">
-  <input type="submit" name="action" value="Clear all"/>
-</form>
 
 {% endblock %}
