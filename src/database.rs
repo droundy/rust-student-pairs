@@ -163,6 +163,8 @@ impl Data {
                 student: s,
                 current_pairing: current_pairing,
                 possible_teams: Vec::new(),
+                possible_sections: self.sections.iter().cloned().collect(),
+                default_section: self.sections.iter().cloned().next().unwrap(),
             };
             for t in self.teams.iter() {
                 if pairings.iter().filter(|p| !(p.team() == Some(*t) && p.full_pair()))
@@ -172,6 +174,7 @@ impl Data {
                 }
             }
             opt.possible_teams.sort();
+            opt.possible_sections.sort();
             options.push(opt);
         }
         options
@@ -322,15 +325,25 @@ pub struct StudentOptions {
     pub student: Student,
     pub current_pairing: Option<Pairing>,
     pub possible_teams: Vec<Team>,
+    pub default_section: Section,
+    pub possible_sections: Vec<Section>,
 }
 
 impl StudentOptions {
-    fn current_team(&self) -> Team {
+    fn is_current_team(&self, t: &Team) -> bool {
         match self.current_pairing {
-            None => Team { name: Intern::new("unassigned".to_string()) },
-            Some(Pairing::Absent(_)) => Team { name: Intern::new("absent".to_string()) },
-            Some(Pairing::Solo { team, .. }) => team,
-            Some(Pairing::Pair { team, .. }) => team,
+            None => false,
+            Some(Pairing::Absent(_)) => false,
+            Some(Pairing::Solo { team, .. }) => team == *t,
+            Some(Pairing::Pair { team, .. }) => team == *t,
+        }
+    }
+    fn is_current_section(&self, s: &Section) -> bool {
+        match self.current_pairing {
+            None => *s == self.default_section,
+            Some(Pairing::Absent(_)) => false,
+            Some(Pairing::Solo { section, .. }) => section == *s,
+            Some(Pairing::Pair { section, .. }) => section == *s,
         }
     }
 }

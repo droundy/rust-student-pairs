@@ -1,0 +1,17 @@
+<form action="/day/{{day.id}}" method="post">
+  {{ student }}
+  <select name="team" onchange="this.form.submit()">
+    <option value="">-</option>
+    {% for t in possible_teams %}
+    <option value="{{ t }}"{% if
+            self.is_current_team(t) %} selected{% endif %}>{{ t }}</option>
+    {% endfor %}
+  </select>
+  <select name="section" onchange="this.form.submit()">
+    <option value="">Absent</option>
+    {% for s in possible_sections %}
+    <option value="{{ s }}"{% if
+            self.is_current_section(s) %} selected{% endif %}>{{ s }}</option>
+    {% endfor %}
+  </select>
+</form>
