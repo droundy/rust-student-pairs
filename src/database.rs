@@ -55,7 +55,7 @@ impl From<String> for Team {
     }
 }
 
-#[derive(Serialize,Deserialize,Clone,Copy,PartialEq,Eq,PartialOrd,Ord,Hash)]
+#[derive(Serialize,Deserialize,Debug,Clone,Copy,PartialEq,Eq,PartialOrd,Ord,Hash)]
 pub enum Pairing {
     Pair {
         section: Section,
@@ -97,11 +97,11 @@ impl Pairing {
         match *self {
             Absent( student ) => vec![student],
             Solo { student, .. } => vec![student],
-            Unassigned { .. } => Vec::new(),
+            Unassigned { student, .. } => vec![student],
             Pair { primary, secondary, .. } => vec![primary, secondary],
         }
     }
-    pub fn has(&self, s: Student) -> bool {
+    fn has(&self, s: Student) -> bool {
         self.allocated_students().contains(&s)
     }
     pub fn section(&self) -> Option<Section> {
@@ -175,9 +175,17 @@ impl Data {
                 default_section: self.student_sections[&s],
             };
             for t in self.teams.iter() {
-                if pairings.iter().filter(|p| !(p.team() == Some(*t) && p.full_pair()))
+                if pairings.iter()
+                    .filter(|p| p.team() == Some(*t))
+                    .filter(|p| !p.has(s))
+                    .filter(|p| p.full_pair() || (p.section().is_some()
+                                                  && opt.current_section().is_some()
+                                                  && p.section() != opt.current_section()))
                     .next().is_none()
                 {
+                    // This team is not full, and it doesn't exist in
+                    // a section other than the current one, so it is
+                    // one this student can join.
                     opt.possible_teams.push(*t);
                 }
             }
@@ -232,14 +240,67 @@ impl Data {
         list.sort();
         list
     }
+    fn unassign_student(&mut self, day: Day, student: Student) {
+        let mut newpairings: HashSet<_> =
+            self.days[day.id].iter().cloned()
+            .filter(|p| !p.has(student))
+            .collect();
+        match self.days[day.id].iter().cloned().filter(|p| p.has(student)).next() {
+            Some(Pairing::Pair{ primary, secondary, team, section }) => {
+                if primary != student {
+                    newpairings.insert(Pairing::Solo {
+                        student: primary,
+                        team,
+                        section
+                    });
+                } else {
+                    newpairings.insert(Pairing::Solo {
+                        student: secondary,
+                        team,
+                        section
+                    });
+                }
+            }
+            _ => (),
+        }
+        self.days[day.id] = newpairings;
+    }
     pub fn assign_student(&mut self, day: Day, student: Student,
                           section: Section, team: Team) {
         if section == Section::from("".to_string()) {
-            println!("Should mark {} as absent", student);
+            println!("Marking {} as absent", student);
+            self.unassign_student(day, student);
+            self.days[day.id].insert(Pairing::Absent(student));
         } else if team == Team::from("".to_string()) {
-            println!("Should mark {} as unassigned in section {}", student, section);
+            println!("Marking {} as unassigned in section {}", student, section);
+            self.unassign_student(day, student);
+            self.days[day.id].insert(Pairing::Unassigned { student, section });
+            println!("Things: {:?}", self.days[day.id]);
         } else {
             println!("Should mark {} as on team {} in section {}", student, team, section);
+            self.unassign_student(day, student);
+            match self.days[day.id].iter().cloned().filter(|p| p.team() == Some(team)).next() {
+                Some(Pairing::Pair{ .. }) => {
+                    println!("Team is already full.  :(");
+                }
+                Some(Pairing::Solo{ student: primary, team, section: oldsec }) => {
+                    if oldsec != section {
+                        println!("Not possible: sections do not match.");
+                    } else {
+                        self.unassign_student(day, primary);
+                        self.days[day.id].insert(Pairing::Pair {
+                            primary: primary,
+                            secondary: student,
+                            team: team,
+                            section: section,
+                        });
+                        println!("Adding {} to team with {}", student, primary);
+                    }
+                }
+                _ => {
+                    self.days[day.id].insert(Pairing::Solo { student, team, section });
+                }
+            }
         }
     }
     pub fn new_student(&mut self, s: Student, section: Section) {
