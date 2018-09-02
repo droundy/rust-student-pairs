@@ -157,44 +157,48 @@ impl Data {
         }
         return &self.days[day.id];
     }
-    pub fn student_options(&self, day: Day) -> Vec<StudentOptions> {
+    pub fn student_options(&self, day: Day) -> Vec<(Section, Vec<StudentOptions>)> {
         let pairings = if day.id >= self.days.len() {
             HashSet::new()
         } else {
             self.days[day.id].clone()
         };
-        let mut options = Vec::new();
-        for s in self.list_students().iter().cloned() {
-            let current_pairing = pairings.iter().filter(|p| p.has(s)).cloned().next();
-            let mut opt = StudentOptions {
-                day: day,
-                student: s,
-                current_pairing: current_pairing,
-                possible_teams: Vec::new(),
-                possible_sections: self.sections.iter().cloned().collect(),
-                default_section: self.student_sections[&s],
-            };
-            for t in self.teams.iter() {
-                if pairings.iter()
-                    .filter(|p| p.team() == Some(*t))
-                    .filter(|p| !p.has(s))
-                    .filter(|p| p.full_pair() || (p.section().is_some()
-                                                  && opt.current_section().is_some()
-                                                  && p.section() != opt.current_section()))
-                    .next().is_none()
-                {
-                    // This team is not full, and it doesn't exist in
-                    // a section other than the current one, so it is
-                    // one this student can join.
-                    opt.possible_teams.push(*t);
+        let mut section_options = Vec::new();
+        for (section, students) in self.list_students_by_section().iter().cloned() {
+            let mut options = Vec::new();
+            for s in students.iter().cloned() {
+                let current_pairing = pairings.iter().filter(|p| p.has(s)).cloned().next();
+                let mut opt = StudentOptions {
+                    day: day,
+                    student: s,
+                    current_pairing: current_pairing,
+                    possible_teams: Vec::new(),
+                    possible_sections: self.sections.iter().cloned().collect(),
+                    default_section: self.student_sections[&s],
+                };
+                for t in self.teams.iter() {
+                    if pairings.iter()
+                        .filter(|p| p.team() == Some(*t))
+                        .filter(|p| !p.has(s))
+                        .filter(|p| p.full_pair() || (p.section().is_some()
+                                                      && opt.current_section().is_some()
+                                                      && p.section() != opt.current_section()))
+                        .next().is_none()
+                    {
+                        // This team is not full, and it doesn't exist in
+                        // a section other than the current one, so it is
+                        // one this student can join.
+                        opt.possible_teams.push(*t);
+                    }
                 }
+                opt.possible_teams.sort();
+                opt.possible_sections.sort();
+                options.push(opt);
             }
-            opt.possible_teams.sort();
-            opt.possible_sections.sort();
-            options.push(opt);
+            options.sort_by_key(|o| o.current_section());
+            section_options.push((section, options));
         }
-        options.sort_by_key(|o| o.current_section());
-        options
+        section_options
     }
     pub fn absent_students(&self, day: Day) -> Vec<Student> {
         if day.id >= self.days.len() {

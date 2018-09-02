@@ -3,22 +3,25 @@
 {% block content %}
 <h1>Edit {{ today }}</h1>
 
+{% for sec_students in all %}
+<h2>{{sec_students.1.len()}} students in section {{sec_students.0}}</h2>
 <form action="/day/{{ today.id }}" method="post">
   <input type="hidden" name="student" value=""/>
-  <input type="hidden" name="section" value=""/>
+  <input type="hidden" name="section" value="{{sec_students.0}}"/>
   <input type="hidden" name="team" value=""/>
   <input type="submit" name="action" value="Shuffle"/>
+  <input type="submit" name="action" value="Shuffle with continuity"/>
+  <input type="submit" name="action" value="Repeat"/>
   <input type="submit" name="action" value="Clear all"/>
 </form>
-
-<h2>{{all.len()}} students</h2>
 <ol>
-  {% for s in all %}
+  {% for s in sec_students.1 %}
   <li>
     {{ s|safe }}
   </li>
   {% endfor %}
 </ol>
+{% endfor %}
 
 <h2>{{unassigned.len()}} unassigned students</h2>
 <ol>
