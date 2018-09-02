@@ -176,13 +176,28 @@ impl Data {
         possible_teams.sort();
         possible_teams.reverse();
         while students.len() > 1 && possible_teams.len() > 0 {
-            let p = Pairing::Pair {
-                primary: students.pop().unwrap(),
-                secondary: students.pop().unwrap(),
-                section: section,
-                team: possible_teams.pop().unwrap(),
-            };
-            self.days[day.id].insert(p);
+            let primary = students.pop().unwrap();
+            let team = possible_teams.pop().unwrap();
+            let secondary;
+            if let Some(student) = students.iter().cloned()
+                .filter(|s| {
+                    for d in 0..day.id {
+                        if self.days[d].iter()
+                            .any(|p| p.present_students().contains(s)
+                                 && p.present_students().contains(&primary)) {
+                                return false;
+                            }
+                    }
+                    true
+                })
+                .next()
+            {
+                secondary = student;
+                students = students.iter().cloned().filter(|&s| s != secondary).collect();
+            } else {
+                secondary = students.pop().unwrap();
+            }
+            self.days[day.id].insert(Pairing::Pair { primary, secondary, section, team });
         }
         if let Some(student) = students.pop() {
             if let Some(team) = possible_teams.pop() {
