@@ -5,6 +5,7 @@ use internment::Intern;
 use atomicfile::AtomicFile;
 use serde_yaml;
 use std::str::FromStr;
+use rand::{thread_rng,Rng};
 
 #[derive(Template,Serialize,Deserialize,Clone,Copy,PartialEq,Eq)]
 #[template(path = "day.html")]
@@ -156,6 +157,38 @@ impl Data {
             self.days.push(HashSet::new());
         }
         return &self.days[day.id];
+    }
+    pub fn shuffle(&mut self, day: Day, section: Section) {
+        let mut possible_teams: Vec<_> = self.teams.iter().collect();
+        possible_teams.sort();
+        possible_teams.reverse();
+        let mut students: Vec<Student> = self.student_sections.iter()
+            .filter(|(_,&sec)| sec == section)
+            .map(|(&s,_)| s)
+            .collect();
+        let mut rng = thread_rng();
+        rng.shuffle(&mut students);
+        self.days[day.id] = self.days[day.id].iter().cloned()
+            .filter(|p| p.section() != Some(section)).collect();
+        let mut possible_teams: Vec<_> =
+            self.teams.iter().cloned()
+            .filter(|&t| !self.days[day.id].iter().any(|p| p.team() == Some(t))).collect();
+        possible_teams.sort();
+        possible_teams.reverse();
+        while students.len() > 1 && possible_teams.len() > 0 {
+            let p = Pairing::Pair {
+                primary: students.pop().unwrap(),
+                secondary: students.pop().unwrap(),
+                section: section,
+                team: possible_teams.pop().unwrap(),
+            };
+            self.days[day.id].insert(p);
+        }
+        if let Some(student) = students.pop() {
+            if let Some(team) = possible_teams.pop() {
+                self.days[day.id].insert(Pairing::Solo { student, team, section });
+            }
+        }
     }
     pub fn student_options(&self, day: Day) -> Vec<(Section, Vec<StudentOptions>)> {
         let pairings = if day.id >= self.days.len() {

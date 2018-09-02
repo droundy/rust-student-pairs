@@ -8,6 +8,7 @@ extern crate serde;
 extern crate serde_yaml;
 extern crate tempfile;
 extern crate internment;
+extern crate rand;
 
 mod atomicfile;
 pub mod database;
@@ -101,7 +102,7 @@ fn main() {
                                                 Team::from(input.team));
                         } else if input.action == "Shuffle" {
                             println!("I should be shuffling {}...", section);
-                            // data.shuffle(today);
+                            data.shuffle(today, section);
                         } else if input.action == "Shuffle with continuity" {
                             println!("I should be shuffling with continuity {}...",
                                      section);
