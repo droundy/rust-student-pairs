@@ -205,6 +205,53 @@ impl Data {
             }
         }
     }
+    pub fn shuffle_with_continuity(&mut self, day: Day, section: Section) {
+        let mut possible_teams: Vec<_> = self.teams.iter().collect();
+        possible_teams.sort();
+        possible_teams.reverse();
+        let mut students: Vec<Student> = self.student_sections.iter()
+            .filter(|(_,&sec)| sec == section)
+            .map(|(&s,_)| s)
+            .collect();
+        let mut rng = thread_rng();
+        rng.shuffle(&mut students);
+        self.days[day.id] = self.days[day.id].iter().cloned()
+            .filter(|p| p.section() != Some(section)).collect();
+        let mut possible_teams: Vec<_> =
+            self.teams.iter().cloned()
+            .filter(|&t| !self.days[day.id].iter().any(|p| p.team() == Some(t))).collect();
+        possible_teams.sort();
+        possible_teams.reverse();
+        while students.len() > 1 && possible_teams.len() > 0 {
+            let primary = students.pop().unwrap();
+            let team = possible_teams.pop().unwrap();
+            let secondary;
+            if let Some(student) = students.iter().cloned()
+                .filter(|s| {
+                    for d in 0..day.id {
+                        if self.days[d].iter()
+                            .any(|p| p.present_students().contains(s)
+                                 && p.present_students().contains(&primary)) {
+                                return false;
+                            }
+                    }
+                    true
+                })
+                .next()
+            {
+                secondary = student;
+                students = students.iter().cloned().filter(|&s| s != secondary).collect();
+            } else {
+                secondary = students.pop().unwrap();
+            }
+            self.days[day.id].insert(Pairing::Pair { primary, secondary, section, team });
+        }
+        if let Some(student) = students.pop() {
+            if let Some(team) = possible_teams.pop() {
+                self.days[day.id].insert(Pairing::Solo { student, team, section });
+            }
+        }
+    }
     pub fn student_options(&self, day: Day) -> Vec<(Section, Vec<StudentOptions>)> {
         let pairings = if day.id >= self.days.len() {
             HashSet::new()
@@ -216,6 +263,14 @@ impl Data {
             let mut options = Vec::new();
             for s in students.iter().cloned() {
                 let current_pairing = pairings.iter().filter(|p| p.has(s)).cloned().next();
+                let previous_team = if day.id > 0 {
+                    self.days[day.id-1].iter()
+                        .filter(|p| p.has(s) && p.full_pair())
+                        .map(|p| p.team().unwrap())
+                        .next()
+                } else {
+                    None
+                };
                 let mut opt = StudentOptions {
                     day: day,
                     student: s,
@@ -223,6 +278,7 @@ impl Data {
                     possible_teams: Vec::new(),
                     possible_sections: self.sections.iter().cloned().collect(),
                     default_section: self.student_sections[&s],
+                    previous_team: previous_team,
                 };
                 for t in self.teams.iter() {
                     if pairings.iter()
@@ -487,6 +543,7 @@ pub struct StudentOptions {
     pub current_pairing: Option<Pairing>,
     pub possible_teams: Vec<Team>,
     pub default_section: Section,
+    pub previous_team: Option<Team>,
     pub possible_sections: Vec<Section>,
 }
 
@@ -502,6 +559,9 @@ impl StudentOptions {
     }
     fn is_current_section(&self, s: &Section) -> bool {
         Some(*s) == self.current_section()
+    }
+    fn is_previous_team(&self, t: &Team) -> bool {
+        Some(*t) == self.previous_team
     }
     fn current_section(&self) -> Option<Section> {
         match self.current_pairing {

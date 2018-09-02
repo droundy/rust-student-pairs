@@ -12,7 +12,8 @@
     <option value="">-</option>
     {% for t in possible_teams %}
     <option value="{{ t }}"{% if
-            self.is_current_team(t) %} selected{% endif %}>{{ t }}</option>
+            self.is_current_team(t) %} selected{% endif %}{% if
+            self.is_previous_team(t) %} class="previous"{% endif %}>{{ t }}</option>
     {% endfor %}
   </select>
   {{ student }}

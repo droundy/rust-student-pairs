@@ -105,11 +105,11 @@ fn main() {
                                                 section,
                                                 Team::from(input.team));
                         } else if input.action == "Shuffle" {
-                            println!("I should be shuffling {}...", section);
+                            println!("Shuffling {}...", section);
                             data.shuffle(today, section);
                         } else if input.action == "Shuffle with continuity" {
-                            println!("I should be shuffling with continuity {}...",
-                                     section);
+                            println!("Shuffling with continuity {}...", section);
+                            data.shuffle_with_continuity(today, section);
                         } else if input.action == "Clear all" {
                             println!("I should be clearing all...");
                             for (sec,students) in data.list_students_by_section() {
