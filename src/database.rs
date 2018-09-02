@@ -563,6 +563,9 @@ impl StudentOptions {
     fn is_previous_team(&self, t: &Team) -> bool {
         Some(*t) == self.previous_team
     }
+    fn is_repeating_team(&self) -> bool {
+        self.previous_team.map(|t| self.is_current_team(&t)).unwrap_or(false)
+    }
     fn current_section(&self) -> Option<Section> {
         match self.current_pairing {
             None => Some(self.default_section),
