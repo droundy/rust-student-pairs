@@ -7,7 +7,12 @@
   {% for s in secstudents.1 %}
   <li>
     <form action="/students" method="post">
-      <input type="hidden" name="section" value="{{secstudents.0}}"/>
+      <select name="section" onchange="this.form.submit()">
+        {% for s in sections %}
+        <option value="{{ s.0 }}"{% if
+                s.0 == secstudents.0 %} selected{% endif %}>{{ s.0 }}</option>
+        {% endfor %}
+      </select>
       <input type="hidden" name="oldname" value="{{s.name}}"/>
       <input type="text" name="newname" value="{{s.name}}"/>
     </form>

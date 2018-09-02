@@ -320,11 +320,9 @@ impl Data {
     pub fn delete_student(&mut self, s: Student) {
         self.student_sections.remove(&s);
     }
-    pub fn rename_student(&mut self, old_s: Student, new_s: Student) {
+    pub fn rename_student(&mut self, old_s: Student, new_s: Student, section: Section) {
         use database::Pairing::*;
-        if let Some(section) = self.student_sections.remove(&old_s) {
-            self.student_sections.insert(new_s, section);
-        }
+        self.student_sections.insert(new_s, section);
         for d in self.days.iter_mut() {
             let problems: Vec<_> = d.iter().cloned().filter(|&p| p.has(old_s)).collect();
             for mut p in problems {

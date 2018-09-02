@@ -145,7 +145,8 @@ fn main() {
                             data.delete_student(Student::from(input.oldname));
                         } else {
                             data.rename_student(Student::from(input.oldname),
-                                                Student::from(input.newname));
+                                                Student::from(input.newname),
+                                                Section::from(input.section));
                         }
                     }
                     Err(e) => {
