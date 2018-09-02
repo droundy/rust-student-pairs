@@ -59,6 +59,10 @@ struct NewStudent {
 fn main() {
     println!("I am running now!!!");
     rouille::start_server("0.0.0.0:8088", move |request| {
+        let response = rouille::match_assets(&request, "static");
+        if response.is_success() {
+            return response;
+        }
         let mut data = database::Data::new();
         let html = router!{
             request,
