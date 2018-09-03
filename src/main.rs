@@ -27,6 +27,15 @@ struct EditDay {
     all: Vec<(Section, Vec<StudentOptions>)>,
 }
 
+#[derive(Template, Serialize, Deserialize, Clone)]
+#[template(path = "team-view.html")]
+struct TeamView {
+    today: Day,
+    unassigned: Vec<Student>,
+    absent: Vec<Student>,
+    all: Vec<(Section, Vec<StudentOptions>)>,
+}
+
 #[derive(Template, Serialize, Deserialize)]
 #[template(path = "index.html")]
 struct Index {
@@ -128,6 +137,62 @@ fn main() {
                     }
                 }
                 let page = EditDay {
+                    today: today,
+                    unassigned: data.unassigned_students(today),
+                    absent: data.absent_students(today),
+                    all: data.student_options(today),
+                };
+                page.render().unwrap()
+            },
+            (GET) (/pairs/{today: Day}) => {
+                let page = TeamView {
+                    today: today,
+                    unassigned: data.unassigned_students(today),
+                    absent: data.absent_students(today),
+                    all: data.student_options(today),
+                };
+                page.render().unwrap()
+            },
+            (POST) (/pairs/{today: Day}) => {
+                match post_input!(request, {
+                    team: String,
+                    section: String,
+                    student: String,
+                    action: String,
+                }) {
+                    Ok(input) => {
+                        let section = Section::from(input.section);
+                        if input.action == "student" {
+                            println!("assigning {} to {:?} {:?}", input.student,
+                                     section, input.team);
+                            data.assign_student(today,
+                                                Student::from(input.student),
+                                                section,
+                                                Team::from(input.team));
+                        } else if input.action == "Shuffle" {
+                            println!("Shuffling {}...", section);
+                            data.shuffle(today, section);
+                        } else if input.action == "Shuffle with continuity" {
+                            println!("Shuffling with continuity {}...", section);
+                            data.shuffle_with_continuity(today, section);
+                        } else if input.action == "Repeat" {
+                            println!("Repeating {}...", section);
+                            data.repeat(today, section);
+                        } else if input.action == "Clear all" {
+                            println!("I should be clearing all...");
+                            for s in data.students_present_in_section(today, section) {
+                                data.unpair_student(today, s);
+                            }
+                        } else {
+                            println!("What do I do with action {}?", input.action);
+                        }
+                    }
+                    Err(e) => {
+                        return Response::text(format!("Post students error: {:?}\n\n{:?}",
+                                                      request, e));
+                    }
+                }
+                let page = TeamView {
                     today: today,
                     unassigned: data.unassigned_students(today),
                     absent: data.absent_students(today),
