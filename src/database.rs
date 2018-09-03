@@ -90,7 +90,7 @@ impl Pairing {
             Absent(_) => Vec::new(),
             Solo { student, .. } => vec![student],
             Unassigned { student, .. } => vec![student],
-            Pair { primary, secondary, .. } => vec![primary, secondary],
+            Pair { primary, secondary, .. } => vec![secondary, primary],
         }
     }
     pub fn allocated_students(&self) -> Vec<Student> {
@@ -158,14 +158,47 @@ impl Data {
         }
         return &self.days[day.id];
     }
-    pub fn shuffle(&mut self, day: Day, section: Section) {
-        let mut possible_teams: Vec<_> = self.teams.iter().collect();
-        possible_teams.sort();
-        possible_teams.reverse();
+    fn nonrepeat_partners_for_day(&self, day: Day, s1: Student, s2: Student) -> bool {
+        for d in 0..day.id {
+            if self.days[d].iter().any(|p| p.present_students().contains(&s1)
+                                           && p.present_students().contains(&s2)) {
+                return false;
+            }
+        }
+        true
+    }
+    fn pick_partner_from(&self, day: Day, s1: Student, options: &mut Vec<Student>)
+                         -> Option<Student> {
+        if let Some(s2) = options.iter().cloned()
+            .filter(|&s2| self.nonrepeat_partners_for_day(day, s1, s2))
+            .next()
+        {
+            *options = options.iter().cloned().filter(|&s| s != s2).collect();
+            Some(s2)
+        } else {
+            options.pop()
+        }
+    }
+    pub fn students_present_in_section(&self, day: Day, section: Section)
+                                       -> Vec<Student> {
         let mut students: Vec<Student> = self.student_sections.iter()
             .filter(|(_,&sec)| sec == section)
             .map(|(&s,_)| s)
             .collect();
+        for p in self.days[day.id].iter().cloned() {
+            if p.section() == Some(section) {
+                students.extend(p.present_students());
+            } else {
+                if let Pairing::Absent(student) = p {
+                    remove_student_from_vec(student, &mut students);
+                }
+            }
+        }
+        students.dedup();
+        students
+    }
+    pub fn shuffle(&mut self, day: Day, section: Section) {
+        let mut students: Vec<Student> = self.students_present_in_section(day, section);
         let mut rng = thread_rng();
         rng.shuffle(&mut students);
         self.days[day.id] = self.days[day.id].iter().cloned()
@@ -178,25 +211,7 @@ impl Data {
         while students.len() > 1 && possible_teams.len() > 0 {
             let primary = students.pop().unwrap();
             let team = possible_teams.pop().unwrap();
-            let secondary;
-            if let Some(student) = students.iter().cloned()
-                .filter(|s| {
-                    for d in 0..day.id {
-                        if self.days[d].iter()
-                            .any(|p| p.present_students().contains(s)
-                                 && p.present_students().contains(&primary)) {
-                                return false;
-                            }
-                    }
-                    true
-                })
-                .next()
-            {
-                secondary = student;
-                students = students.iter().cloned().filter(|&s| s != secondary).collect();
-            } else {
-                secondary = students.pop().unwrap();
-            }
+            let secondary = self.pick_partner_from(day, primary, &mut students).unwrap();
             self.days[day.id].insert(Pairing::Pair { primary, secondary, section, team });
         }
         if let Some(student) = students.pop() {
@@ -206,44 +221,132 @@ impl Data {
         }
     }
     pub fn shuffle_with_continuity(&mut self, day: Day, section: Section) {
-        let mut possible_teams: Vec<_> = self.teams.iter().collect();
-        possible_teams.sort();
-        possible_teams.reverse();
-        let mut students: Vec<Student> = self.student_sections.iter()
-            .filter(|(_,&sec)| sec == section)
-            .map(|(&s,_)| s)
-            .collect();
+        let mut students: Vec<Student> = self.students_present_in_section(day, section);
         let mut rng = thread_rng();
         rng.shuffle(&mut students);
+        let last_week_pairs: Vec<_> =
+            if day.id > 0 {
+                self.days[day.id-1].iter().cloned()
+                    .filter(|p| p.section() == Some(section) && p.team().is_some())
+                    .collect()
+            } else {
+                Vec::new()
+            };
         self.days[day.id] = self.days[day.id].iter().cloned()
             .filter(|p| p.section() != Some(section)).collect();
         let mut possible_teams: Vec<_> =
             self.teams.iter().cloned()
             .filter(|&t| !self.days[day.id].iter().any(|p| p.team() == Some(t))).collect();
+        let mut last_week_pairs: Vec<_> =
+            last_week_pairs.iter().cloned()
+            .filter(|p| possible_teams.contains(&p.team().unwrap()))
+            .collect();
+        rng.shuffle(&mut last_week_pairs);
+        let mut newpairings = Vec::new();
+        for p in last_week_pairs.into_iter() {
+            let team = p.team().unwrap();
+            for st in p.present_students() {
+                if let Some(student) = remove_student_from_vec(st, &mut students) {
+                    possible_teams = possible_teams.iter().cloned()
+                        .filter(|&t| t != team).collect();
+                    newpairings.push(Pairing::Solo {team, student, section});
+                    break;
+                }
+            }
+        }
+        for mut p in newpairings.into_iter() {
+            let primary = p.present_students()[0];
+            let team = p.team().unwrap();
+            if let Some(secondary) = self.pick_partner_from(day, primary, &mut students) {
+                p = Pairing::Pair { primary, secondary, section, team };
+            }
+            self.days[day.id].insert(p);
+        }
         possible_teams.sort();
         possible_teams.reverse();
         while students.len() > 1 && possible_teams.len() > 0 {
             let primary = students.pop().unwrap();
             let team = possible_teams.pop().unwrap();
-            let secondary;
-            if let Some(student) = students.iter().cloned()
-                .filter(|s| {
-                    for d in 0..day.id {
-                        if self.days[d].iter()
-                            .any(|p| p.present_students().contains(s)
-                                 && p.present_students().contains(&primary)) {
-                                return false;
-                            }
-                    }
-                    true
-                })
-                .next()
-            {
-                secondary = student;
-                students = students.iter().cloned().filter(|&s| s != secondary).collect();
-            } else {
-                secondary = students.pop().unwrap();
+            let secondary = self.pick_partner_from(day, primary, &mut students).unwrap();
+            self.days[day.id].insert(Pairing::Pair { primary, secondary, section, team });
+        }
+        if let Some(student) = students.pop() {
+            if let Some(team) = possible_teams.pop() {
+                self.days[day.id].insert(Pairing::Solo { student, team, section });
             }
+        }
+    }
+    pub fn repeat(&mut self, day: Day, section: Section) {
+        let mut students: Vec<Student> = self.students_present_in_section(day, section);
+        let mut rng = thread_rng();
+        rng.shuffle(&mut students);
+        let last_week_pairs: Vec<_> =
+            if day.id > 0 {
+                self.days[day.id-1].iter().cloned()
+                    .filter(|p| p.section() == Some(section) && p.team().is_some())
+                    .collect()
+            } else {
+                Vec::new()
+            };
+        self.days[day.id] = self.days[day.id].iter().cloned()
+            .filter(|p| p.section() != Some(section)).collect();
+        let mut possible_teams: Vec<_> =
+            self.teams.iter().cloned()
+            .filter(|&t| !self.days[day.id].iter().any(|p| p.team() == Some(t))).collect();
+        let mut last_week_pairs: Vec<_> =
+            last_week_pairs.iter().cloned()
+            .filter(|p| possible_teams.contains(&p.team().unwrap()))
+            .collect();
+        rng.shuffle(&mut last_week_pairs);
+        let mut newpairings = Vec::new();
+        for p in last_week_pairs.into_iter() {
+            let team = p.team().unwrap();
+            match p {
+                Pairing::Pair { primary, secondary, .. } => {
+                    if remove_student_from_vec(primary, &mut students).is_some() {
+                        if remove_student_from_vec(secondary, &mut students).is_some() {
+                            newpairings.push(Pairing::Pair {
+                                primary, secondary, section, team });
+                            possible_teams = possible_teams.iter().cloned()
+                                .filter(|&t| t != team).collect();
+                        } else {
+                            newpairings.push(Pairing::Solo { student: primary, section, team });
+                            possible_teams = possible_teams.iter().cloned()
+                                .filter(|&t| t != team).collect();
+                        }
+                    } else {
+                        if remove_student_from_vec(secondary, &mut students).is_some() {
+                            newpairings.push(Pairing::Solo { student: secondary,
+                                                             section, team });
+                            possible_teams = possible_teams.iter().cloned()
+                                .filter(|&t| t != team).collect();
+                        }
+                    }
+                }
+                Pairing::Solo { student, .. } => {
+                    if let Some(student) = remove_student_from_vec(student, &mut students) {
+                        newpairings.push(Pairing::Solo { student, section, team });
+                        possible_teams = possible_teams.iter().cloned()
+                            .filter(|&t| t != team).collect();
+                    }
+                }
+                _ => (),
+            }
+        }
+        for mut p in newpairings.into_iter() {
+            if let Pairing::Solo { student, team, .. } = p {
+                if let Some(secondary) = self.pick_partner_from(day, student, &mut students) {
+                    p = Pairing::Pair { primary: student, secondary, section, team };
+                }
+            }
+            self.days[day.id].insert(p);
+        }
+        possible_teams.sort();
+        possible_teams.reverse();
+        while students.len() > 1 && possible_teams.len() > 0 {
+            let primary = students.pop().unwrap();
+            let team = possible_teams.pop().unwrap();
+            let secondary = self.pick_partner_from(day, primary, &mut students).unwrap();
             self.days[day.id].insert(Pairing::Pair { primary, secondary, section, team });
         }
         if let Some(student) = students.pop() {
@@ -575,4 +678,12 @@ impl StudentOptions {
             Some(Pairing::Pair { section, .. }) => Some(section),
         }
     }
+}
+
+fn remove_student_from_vec(s: Student, options: &mut Vec<Student>) -> Option<Student> {
+    if !options.contains(&s) {
+        return None;
+    }
+    *options = options.iter().cloned().filter(|&s2| s2 != s).collect();
+    Some(s)
 }

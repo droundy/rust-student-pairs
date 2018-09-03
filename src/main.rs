@@ -110,14 +110,13 @@ fn main() {
                         } else if input.action == "Shuffle with continuity" {
                             println!("Shuffling with continuity {}...", section);
                             data.shuffle_with_continuity(today, section);
+                        } else if input.action == "Repeat" {
+                            println!("Repeating {}...", section);
+                            data.repeat(today, section);
                         } else if input.action == "Clear all" {
                             println!("I should be clearing all...");
-                            for (sec,students) in data.list_students_by_section() {
-                                if sec == section {
-                                    for s in students.iter().cloned() {
-                                        data.unpair_student(today, s);
-                                    }
-                                }
+                            for s in data.students_present_in_section(today, section) {
+                                data.unpair_student(today, s);
                             }
                         } else {
                             println!("What do I do with action {}?", input.action);
