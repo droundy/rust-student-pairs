@@ -1,0 +1,7 @@
+<select name="{{ choice_name }}" onchange="this.form.submit()">
+  <option value="">-</option>
+  {% for p in possibility %}
+  <option value="{{ p }}"{% if
+          self.is_current(p) %} selected{% endif %}>{{ p }}</option>
+  {% endfor %}
+</select>

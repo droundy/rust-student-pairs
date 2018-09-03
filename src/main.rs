@@ -16,7 +16,7 @@ pub mod database;
 use rouille::{Response};
 use askama::Template;
 
-use database::{Student, Day, Team, Section, StudentOptions};
+use database::{Student, Day, Team, Section, StudentOptions, TeamOptions};
 
 #[derive(Template, Serialize, Deserialize, Clone)]
 #[template(path = "edit-day.html")]
@@ -33,7 +33,7 @@ struct TeamView {
     today: Day,
     unassigned: Vec<Student>,
     absent: Vec<Student>,
-    all: Vec<(Section, Vec<StudentOptions>)>,
+    all: Vec<(Section, Vec<TeamOptions>)>,
 }
 
 #[derive(Template, Serialize, Deserialize)]
@@ -149,7 +149,7 @@ fn main() {
                     today: today,
                     unassigned: data.unassigned_students(today),
                     absent: data.absent_students(today),
-                    all: data.student_options(today),
+                    all: data.team_options(today),
                 };
                 page.render().unwrap()
             },
@@ -196,7 +196,7 @@ fn main() {
                     today: today,
                     unassigned: data.unassigned_students(today),
                     absent: data.absent_students(today),
-                    all: data.student_options(today),
+                    all: data.team_options(today),
                 };
                 page.render().unwrap()
             },

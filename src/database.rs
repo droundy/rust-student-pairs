@@ -200,10 +200,6 @@ impl Data {
     }
     pub fn shuffle(&mut self, day: Day, section: Section) {
         let mut students: Vec<Student> = self.students_present_in_section(day, section);
-        println!("students:");
-        for s in students.iter().cloned() {
-            println!("  {}", s);
-        }
         let mut rng = thread_rng();
         rng.shuffle(&mut students);
         self.days[day.id] = self.days[day.id].iter().cloned()
@@ -218,13 +214,11 @@ impl Data {
             let team = possible_teams.pop().unwrap();
             let secondary = self.pick_partner_from(day, primary, &mut students).unwrap();
             self.days[day.id].insert(Pairing::Pair { primary, secondary, section, team });
-            println!("putting {} with {}", primary, secondary);
         }
         if let Some(student) = students.pop() {
             if let Some(team) = possible_teams.pop() {
                 self.days[day.id].insert(Pairing::Solo { student, team, section });
             }
-            println!("leaving {} alone", student);
         }
     }
     pub fn shuffle_with_continuity(&mut self, day: Day, section: Section) {
@@ -371,6 +365,37 @@ impl Data {
                 self.days[day.id].insert(Pairing::Solo { student, team, section });
             }
         }
+    }
+    pub fn team_options(&self, day: Day) -> Vec<(Section, Vec<TeamOptions>)> {
+        let mut section_options = Vec::new();
+        for section in self.sections.iter().cloned() {
+            let mut teams = Vec::new();
+            for p in self.days[day.id].iter().cloned()
+                .filter(|p| p.section() == Some(section))
+            {
+                match p {
+                    Pairing::Pair { team, primary, secondary, .. } => {
+                        teams.push(TeamOptions {
+                            team, section,
+                            students: vec![primary, secondary],
+                            current_pairing: p,
+                        });
+                    }
+                    Pairing::Solo { team, student, .. } => {
+                        teams.push(TeamOptions {
+                            team, section,
+                            students: vec![student],
+                            current_pairing: p,
+                        });
+                    }
+                    _ => (),
+                }
+            }
+            teams.sort();
+            section_options.push((section, teams));
+        }
+        section_options.sort();
+        section_options
     }
     pub fn student_options(&self, day: Day) -> Vec<(Section, Vec<StudentOptions>)> {
         let pairings = if day.id >= self.days.len() {
@@ -703,4 +728,34 @@ fn remove_student_from_vec(s: Student, options: &mut Vec<Student>) -> Option<Stu
     }
     *options = options.iter().cloned().filter(|&s2| s2 != s).collect();
     Some(s)
+}
+
+
+// #[derive(Template, Serialize, Deserialize, Clone, Ord, PartialOrd, Eq, PartialEq)]
+// #[template(path = "choices.html")]
+// pub struct Choices<T> {
+//     pub current: T,
+//     pub possibility: Vec<T>,
+//     pub choice_name: String,
+// }
+
+// impl<T: Eq> Choices<T> {
+//     pub fn is_current(&self, x: &T) -> bool {
+//         *x == self.current
+//     }
+// }
+
+#[derive(Template, Serialize, Deserialize, Clone, Ord, PartialOrd, Eq, PartialEq)]
+#[template(path = "team-options.html")]
+pub struct TeamOptions {
+    pub team: Team,
+    pub section: Section,
+    pub students: Vec<Student>,
+    pub current_pairing: Pairing,
+}
+
+impl TeamOptions {
+    fn is_on_team(&self, s: &Student) -> bool {
+        self.students.contains(s)
+    }
 }

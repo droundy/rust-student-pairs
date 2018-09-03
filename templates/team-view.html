@@ -6,6 +6,27 @@
 {% block content %}
 <h1>Edit {{ today }}</h1>
 
+{% for section_team in all %}
+<h2>{{section_team.1.len()}} teams in section {{section_team.0}}</h2>
+<form method="post">
+  <input type="hidden" name="student" value=""/>
+  <input type="hidden" name="section" value="{{section_team.0}}"/>
+  <input type="hidden" name="team" value=""/>
+
+  <input type="submit" name="action" value="Shuffle"/>
+  <input type="submit" name="action" value="Shuffle with continuity"/>
+  <input type="submit" name="action" value="Repeat"/>
+  <input type="submit" name="action" value="Clear all"/>
+</form>
+<ol>
+  {% for t in section_team.1 %}
+  <li>
+    {{ t|safe }}
+  </li>
+  {% endfor %}
+</ol>
+{% endfor %}
+
 <h2>{{unassigned.len()}} unassigned students</h2>
 <ol>
   {% for s in unassigned %}
