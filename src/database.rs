@@ -194,11 +194,16 @@ impl Data {
                 }
             }
         }
+        students.sort();
         students.dedup();
         students
     }
     pub fn shuffle(&mut self, day: Day, section: Section) {
         let mut students: Vec<Student> = self.students_present_in_section(day, section);
+        println!("students:");
+        for s in students.iter().cloned() {
+            println!("  {}", s);
+        }
         let mut rng = thread_rng();
         rng.shuffle(&mut students);
         self.days[day.id] = self.days[day.id].iter().cloned()
@@ -213,11 +218,13 @@ impl Data {
             let team = possible_teams.pop().unwrap();
             let secondary = self.pick_partner_from(day, primary, &mut students).unwrap();
             self.days[day.id].insert(Pairing::Pair { primary, secondary, section, team });
+            println!("putting {} with {}", primary, secondary);
         }
         if let Some(student) = students.pop() {
             if let Some(team) = possible_teams.pop() {
                 self.days[day.id].insert(Pairing::Solo { student, team, section });
             }
+            println!("leaving {} alone", student);
         }
     }
     pub fn shuffle_with_continuity(&mut self, day: Day, section: Section) {
@@ -299,23 +306,29 @@ impl Data {
             .collect();
         rng.shuffle(&mut last_week_pairs);
         let mut newpairings = Vec::new();
+        for p in last_week_pairs.iter().cloned() {
+            println!("   {:?}", p);
+        }
         for p in last_week_pairs.into_iter() {
             let team = p.team().unwrap();
             match p {
                 Pairing::Pair { primary, secondary, .. } => {
                     if remove_student_from_vec(primary, &mut students).is_some() {
                         if remove_student_from_vec(secondary, &mut students).is_some() {
+                            println!("{} and {} are still in {}", primary, secondary, team);
                             newpairings.push(Pairing::Pair {
                                 primary, secondary, section, team });
                             possible_teams = possible_teams.iter().cloned()
                                 .filter(|&t| t != team).collect();
                         } else {
+                            println!("{} is alas alone in {}", primary, team);
                             newpairings.push(Pairing::Solo { student: primary, section, team });
                             possible_teams = possible_teams.iter().cloned()
                                 .filter(|&t| t != team).collect();
                         }
                     } else {
                         if remove_student_from_vec(secondary, &mut students).is_some() {
+                            println!(">>> {} is now alone in {} ({} dropped)", secondary, team, primary);
                             newpairings.push(Pairing::Solo { student: secondary,
                                                              section, team });
                             possible_teams = possible_teams.iter().cloned()
@@ -325,6 +338,7 @@ impl Data {
                 }
                 Pairing::Solo { student, .. } => {
                     if let Some(student) = remove_student_from_vec(student, &mut students) {
+                        println!("{} is still alone in {}", student, team);
                         newpairings.push(Pairing::Solo { student, section, team });
                         possible_teams = possible_teams.iter().cloned()
                             .filter(|&t| t != team).collect();
@@ -336,6 +350,8 @@ impl Data {
         for mut p in newpairings.into_iter() {
             if let Pairing::Solo { student, team, .. } = p {
                 if let Some(secondary) = self.pick_partner_from(day, student, &mut students) {
+                    println!("choosing {} to go with {} in {}",
+                             secondary, student, team);
                     p = Pairing::Pair { primary: student, secondary, section, team };
                 }
             }
@@ -343,6 +359,7 @@ impl Data {
         }
         possible_teams.sort();
         possible_teams.reverse();
+        println!("still have remaining {} students", students.len());
         while students.len() > 1 && possible_teams.len() > 0 {
             let primary = students.pop().unwrap();
             let team = possible_teams.pop().unwrap();

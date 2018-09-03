@@ -1,7 +1,8 @@
 {% extends "base.html" %}
 
 {% block content %}
-<h1>Edit {{ today }}</h1>
+<h1>Edit {{ today }} (<a href="/day/{{ today.previous().id
+                               }}">previous</a>, <a href="/day/{{ today.next().id }}">next</a>)</h1>
 
 {% for sec_students in all %}
 <h2>{{sec_students.1.len()}} students in section {{sec_students.0}}</h2>
