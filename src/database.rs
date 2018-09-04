@@ -377,14 +377,32 @@ impl Data {
                     Pairing::Pair { team, primary, secondary, .. } => {
                         teams.push(TeamOptions {
                             team, section,
-                            students: vec![primary, secondary],
+                            primary: Choices {
+                                current: Some(primary),
+                                possibilities: vec![primary],
+                                choice_name: "primary".to_string(),
+                            },
+                            secondary: Choices {
+                                current: Some(secondary),
+                                possibilities: vec![secondary],
+                                choice_name: "secondary".to_string(),
+                            },
                             current_pairing: p,
                         });
                     }
                     Pairing::Solo { team, student, .. } => {
                         teams.push(TeamOptions {
                             team, section,
-                            students: vec![student],
+                            primary: Choices {
+                                current: Some(student),
+                                possibilities: vec![student],
+                                choice_name: "primary".to_string(),
+                            },
+                            secondary: Choices {
+                                current: None,
+                                possibilities: vec![],
+                                choice_name: "secondary".to_string(),
+                            },
                             current_pairing: p,
                         });
                     }
@@ -731,31 +749,36 @@ fn remove_student_from_vec(s: Student, options: &mut Vec<Student>) -> Option<Stu
 }
 
 
-// #[derive(Template, Serialize, Deserialize, Clone, Ord, PartialOrd, Eq, PartialEq)]
-// #[template(path = "choices.html")]
-// pub struct Choices<T> {
-//     pub current: T,
-//     pub possibility: Vec<T>,
-//     pub choice_name: String,
-// }
+#[derive(Template, Serialize, Deserialize, Clone, Ord, PartialOrd, Eq, PartialEq)]
+#[template(path = "choices.html")]
+pub struct Choices<T: ::std::fmt::Display + Eq> {
+    pub current: Option<T>,
+    pub possibilities: Vec<T>,
+    pub choice_name: String,
+}
 
-// impl<T: Eq> Choices<T> {
-//     pub fn is_current(&self, x: &T) -> bool {
-//         *x == self.current
-//     }
-// }
+impl<T: Eq + ::std::fmt::Display> Choices<T> {
+    pub fn is_current(&self, x: &T) -> bool {
+        if let Some(ref c) = self.current {
+            c == x
+        } else {
+            false
+        }
+    }
+}
 
 #[derive(Template, Serialize, Deserialize, Clone, Ord, PartialOrd, Eq, PartialEq)]
 #[template(path = "team-options.html")]
 pub struct TeamOptions {
     pub team: Team,
     pub section: Section,
-    pub students: Vec<Student>,
+    pub primary: Choices<Student>,
+    pub secondary: Choices<Student>,
     pub current_pairing: Pairing,
 }
 
 impl TeamOptions {
     fn is_on_team(&self, s: &Student) -> bool {
-        self.students.contains(s)
+        self.primary.is_current(s) || self.secondary.is_current(s)
     }
 }
