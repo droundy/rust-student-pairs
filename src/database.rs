@@ -84,6 +84,15 @@ impl Pairing {
             false
         }
     }
+    pub fn assigned_students(&self) -> Vec<Student> {
+        use database::Pairing::*;
+        match *self {
+            Absent(_) => Vec::new(),
+            Solo { student, .. } => vec![student],
+            Unassigned { .. } => Vec::new(),
+            Pair { primary, secondary, .. } => vec![secondary, primary],
+        }
+    }
     pub fn present_students(&self) -> Vec<Student> {
         use database::Pairing::*;
         match *self {
@@ -189,8 +198,11 @@ impl Data {
             if p.section() == Some(section) {
                 students.extend(p.present_students());
             } else {
-                if let Pairing::Absent(student) = p {
-                    remove_student_from_vec(student, &mut students);
+                // If they are in a *different* section *or* are
+                // absent, then they are not going to be present in
+                // *this* section.
+                for s in p.allocated_students().into_iter() {
+                    remove_student_from_vec(s, &mut students);
                 }
             }
         }
@@ -370,21 +382,30 @@ impl Data {
         let mut section_options = Vec::new();
         for section in self.sections.iter().cloned() {
             let mut teams = Vec::new();
+            let present_students = self.students_present_in_section(day, section);
+            let unassigned: Vec<_> = self.unassigned_students(day).iter().cloned()
+                .filter(|s| present_students.contains(s)).collect();
             for p in self.days[day.id].iter().cloned()
                 .filter(|p| p.section() == Some(section))
             {
                 match p {
                     Pairing::Pair { team, primary, secondary, .. } => {
+                        let mut primary_options = unassigned.clone();
+                        primary_options.push(primary);
+                        primary_options.sort();
+                        let mut secondary_options = unassigned.clone();
+                        secondary_options.push(secondary);
+                        secondary_options.sort();
                         teams.push(TeamOptions {
                             team, section,
                             primary: Choices {
                                 current: Some(primary),
-                                possibilities: vec![primary],
+                                possibilities: primary_options,
                                 choice_name: "primary".to_string(),
                             },
                             secondary: Choices {
                                 current: Some(secondary),
-                                possibilities: vec![secondary],
+                                possibilities: secondary_options,
                                 choice_name: "secondary".to_string(),
                             },
                             current_pairing: p,
@@ -483,7 +504,8 @@ impl Data {
         }
         self.student_sections.keys()
             .cloned()
-            .filter(|&s| !self.days[day.id].iter().any(|p| p.has(s)))
+            .filter(|&s| !self.days[day.id].iter()
+                    .any(|p| p.assigned_students().contains(&s)))
             .collect()
     }
 
