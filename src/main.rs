@@ -157,18 +157,25 @@ fn main() {
                 match post_input!(request, {
                     team: String,
                     section: String,
-                    student: String,
+                    primary: String,
+                    secondary: String,
                     action: String,
                 }) {
                     Ok(input) => {
                         let section = Section::from(input.section);
-                        if input.action == "student" {
-                            println!("assigning {} to {:?} {:?}", input.student,
-                                     section, input.team);
-                            data.assign_student(today,
-                                                Student::from(input.student),
-                                                section,
-                                                Team::from(input.team));
+                        if input.action == "team" {
+                            let team = Team::from(input.team);
+                            data.unpair_team(today, team);
+                            if input.primary != "" {
+                                data.assign_student(today,
+                                                    Student::from(input.primary),
+                                                    section, team);
+                            }
+                            if input.secondary != "" {
+                                data.assign_student(today,
+                                                    Student::from(input.secondary),
+                                                    section, team);
+                            }
                         } else if input.action == "Shuffle" {
                             println!("Shuffling {}...", section);
                             data.shuffle(today, section);

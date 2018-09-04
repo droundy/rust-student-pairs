@@ -7,7 +7,7 @@ use serde_yaml;
 use std::str::FromStr;
 use rand::{thread_rng,Rng};
 
-#[derive(Template,Serialize,Deserialize,Clone,Copy,PartialEq,Eq)]
+#[derive(Template,Serialize,Deserialize,Clone,Copy,PartialEq,Eq,PartialOrd,Ord)]
 #[template(path = "day.html")]
 pub struct Day { pub id: usize }
 impl Day {
@@ -397,7 +397,7 @@ impl Data {
                         secondary_options.push(secondary);
                         secondary_options.sort();
                         teams.push(TeamOptions {
-                            team, section,
+                            day, team, section,
                             primary: Choices {
                                 current: Some(primary),
                                 possibilities: primary_options,
@@ -412,16 +412,19 @@ impl Data {
                         });
                     }
                     Pairing::Solo { team, student, .. } => {
+                        let mut primary_options = unassigned.clone();
+                        primary_options.push(student);
+                        primary_options.sort();
                         teams.push(TeamOptions {
-                            team, section,
+                            day, team, section,
                             primary: Choices {
                                 current: Some(student),
-                                possibilities: vec![student],
+                                possibilities: primary_options,
                                 choice_name: "primary".to_string(),
                             },
                             secondary: Choices {
                                 current: None,
-                                possibilities: vec![],
+                                possibilities: unassigned.clone(),
                                 choice_name: "secondary".to_string(),
                             },
                             current_pairing: p,
@@ -606,6 +609,18 @@ impl Data {
         };
         self.unassign_student(day, student);
         self.days[day.id].insert(Pairing::Unassigned { student, section });
+    }
+    pub fn unpair_team(&mut self, day: Day, team: Team) {
+        match self.days[day.id].iter().cloned().filter(|p| p.team() == Some(team)).next() {
+            Some(Pairing::Pair { primary, secondary, .. }) => {
+                self.unpair_student(day, primary);
+                self.unpair_student(day, secondary);
+            }
+            Some(Pairing::Solo { student, .. }) => {
+                self.unpair_student(day, student);
+            }
+            _ => (),
+        };
     }
     pub fn new_student(&mut self, s: Student, section: Section) {
         self.student_sections.insert(s, section);
@@ -792,6 +807,7 @@ impl<T: Eq + ::std::fmt::Display> Choices<T> {
 #[derive(Template, Serialize, Deserialize, Clone, Ord, PartialOrd, Eq, PartialEq)]
 #[template(path = "team-options.html")]
 pub struct TeamOptions {
+    pub day: Day,
     pub team: Team,
     pub section: Section,
     pub primary: Choices<Student>,
