@@ -388,26 +388,61 @@ impl Data {
             for p in self.days[day.id].iter().cloned()
                 .filter(|p| p.section() == Some(section))
             {
+                let previous_students = if day.id > 0 {
+                    self.days[day.id-1].iter()
+                        .filter(|pp| pp.team() == p.team())
+                        .map(|p| p.present_students())
+                        .next().unwrap_or(Vec::new())
+                } else {
+                    Vec::new()
+                };
+
                 match p {
                     Pairing::Pair { team, primary, secondary, .. } => {
                         let mut primary_options = unassigned.clone();
                         primary_options.push(primary);
                         primary_options.sort();
+                        let primary_options = primary_options.into_iter()
+                            .map(|s| (s,Vec::new()))
+                            .map(|(s, mut tags)| {
+                                if !self.nonrepeat_partners_for_day(day, secondary, s) {
+                                    tags.push("repeat".to_string());
+                                }
+                                if previous_students.contains(&s) {
+                                    tags.push("reuser".to_string());
+                                }
+                                (s,tags)
+                            })
+                            .collect();
                         let mut secondary_options = unassigned.clone();
                         secondary_options.push(secondary);
                         secondary_options.sort();
+                        let secondary_options = secondary_options.into_iter()
+                            .map(|s| (s,Vec::new()))
+                            .map(|(s, mut tags)| {
+                                if !self.nonrepeat_partners_for_day(day, primary, s) {
+                                    tags.push("repeat".to_string());
+                                }
+                                if previous_students.contains(&s) {
+                                    tags.push("reuser".to_string());
+                                }
+                                (s,tags)
+                            })
+                            .collect();
                         teams.push(TeamOptions {
                             day, team, section,
                             primary: Choices {
                                 current: Some(primary),
                                 possibilities: primary_options,
                                 choice_name: "primary".to_string(),
-                            },
+                                tags: Vec::new(),
+                            }.normalize(),
                             secondary: Choices {
                                 current: Some(secondary),
                                 possibilities: secondary_options,
                                 choice_name: "secondary".to_string(),
-                            },
+                                tags: Vec::new(),
+                            }.normalize(),
                             current_pairing: p,
                         });
                     }
@@ -415,18 +450,41 @@ impl Data {
                         let mut primary_options = unassigned.clone();
                         primary_options.push(student);
                         primary_options.sort();
+                        let primary_options = primary_options.into_iter()
+                            .map(|s| (s,Vec::new()))
+                            .map(|(s, mut tags)| {
+                                if previous_students.contains(&s) {
+                                    tags.push("reuser".to_string());
+                                }
+                                (s,tags)
+                            })
+                            .collect();
+                        let secondary_options = unassigned.iter().cloned()
+                            .map(|s| (s,Vec::new()))
+                            .map(|(s, mut tags)| {
+                                if !self.nonrepeat_partners_for_day(day, student, s) {
+                                    tags.push("repeat".to_string());
+                                }
+                                if previous_students.contains(&s) {
+                                    tags.push("reuser".to_string());
+                                }
+                                (s,tags)
+                            })
+                            .collect();
                         teams.push(TeamOptions {
                             day, team, section,
                             primary: Choices {
                                 current: Some(student),
                                 possibilities: primary_options,
                                 choice_name: "primary".to_string(),
-                            },
+                                tags: Vec::new(),
+                            }.normalize(),
                             secondary: Choices {
                                 current: None,
-                                possibilities: unassigned.clone(),
+                                possibilities: secondary_options,
                                 choice_name: "secondary".to_string(),
-                            },
+                                tags: Vec::new(),
+                            }.normalize(),
                             current_pairing: p,
                         });
                     }
@@ -775,6 +833,13 @@ impl StudentOptions {
             Some(Pairing::Pair { section, .. }) => Some(section),
         }
     }
+    fn tags(&self) -> Vec<String> {
+        let mut tags = Vec::new();
+        if self.is_repeating_team() {
+            tags.push("reuser".to_string());
+        }
+        tags
+    }
 }
 
 fn remove_student_from_vec(s: Student, options: &mut Vec<Student>) -> Option<Student> {
@@ -788,19 +853,35 @@ fn remove_student_from_vec(s: Student, options: &mut Vec<Student>) -> Option<Stu
 
 #[derive(Template, Serialize, Deserialize, Clone, Ord, PartialOrd, Eq, PartialEq)]
 #[template(path = "choices.html")]
-pub struct Choices<T: ::std::fmt::Display + Eq> {
+pub struct Choices<T: ::std::fmt::Display + Eq + Clone> {
     pub current: Option<T>,
-    pub possibilities: Vec<T>,
+    /// A list of possible choices as well as their tags.
+    pub possibilities: Vec<(T, Vec<String>)>,
     pub choice_name: String,
+    /// Tags to apply to the entire select (i.e. regarding the current).
+    pub tags: Vec<String>,
 }
 
-impl<T: Eq + ::std::fmt::Display> Choices<T> {
-    pub fn is_current(&self, x: &T) -> bool {
+impl<T: Eq + Clone + ::std::fmt::Display> Choices<T> {
+    pub fn normalize(mut self) -> Self {
+        if let Some(c) = self.current.clone() {
+            if let Some((_, tags)) = self.possibilities.iter().cloned()
+                .filter(|(o,_)| o.clone() == c.clone()).next()
+            {
+                self.tags.extend(tags);
+            }
+        }
+        self
+    }
+    pub fn is_current(&self, x: T) -> bool {
         if let Some(ref c) = self.current {
-            c == x
+            c == &x
         } else {
             false
         }
+    }
+    pub fn current_string(&self) -> String {
+        self.current.clone().map(|x| format!("{}", x)).unwrap_or("-".to_string())
     }
 }
 
@@ -817,6 +898,6 @@ pub struct TeamOptions {
 
 impl TeamOptions {
     fn is_on_team(&self, s: &Student) -> bool {
-        self.primary.is_current(s) || self.secondary.is_current(s)
+        self.primary.is_current(*s) || self.secondary.is_current(*s)
     }
 }

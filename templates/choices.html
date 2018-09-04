@@ -1,7 +1,10 @@
-<select name="{{ choice_name }}" onchange="this.form.submit()">
+<select name="{{ choice_name }}" class="{% for class in tags
+                         %} {{ class }}{% endfor %}" onchange="this.form.submit()">
   <option value="">-</option>
   {% for p in possibilities %}
-  <option value="{{ p }}"{% if
-          self.is_current(p) %} selected{% endif %}>{{ p }}</option>
+  <option value="{{ p.0.clone() }}" class="{% for class in p.1.clone()
+                         %} {{ class }}{% endfor %}{% if
+          self.is_current(p.0.clone()) %} current{% endif %}"{% if
+          self.is_current(p.0.clone()) %} selected{% endif %}>{{ p.0.clone() }}</option>
   {% endfor %}
 </select>

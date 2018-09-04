@@ -13,8 +13,8 @@
     {% for t in possible_teams %}
     <option value="{{ t }}"{% if
             self.is_current_team(t) %} selected{% endif %}{% if
-            self.is_previous_team(t) %} class="previous"{% endif %}>{{ t }}</option>
+            self.is_previous_team(t) %} class="reuser"{% endif %}>{{ t }}</option>
     {% endfor %}
   </select>
-  <span{% if self.is_repeating_team() %} class="previous"{% endif %}>{{ student }}</span>
+  <span class="{% for t in self.tags() %} {{t}}{% endfor %}">{{ student }}</span>
 </form>

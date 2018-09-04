@@ -1,15 +1,19 @@
 {% extends "base.html" %}
 
 {% block nav %}
-          <li><a href="/day/{{ today.id }}">Student view</a></li>
+<li><a href="/day/{{ today.id }}">Student view</a></li>
 {% endblock %}
 {% block content %}
-<h1>Edit {{ today }}</h1>
+<h1>Edit {{ today }}
+  (<a href="/pairs/{{ today.previous().id
+            }}">previous</a>, <a href="/pairs/{{ today.next().id }}">next</a>)
+</h1>
 
 {% for section_team in all %}
 <h2>{{section_team.1.len()}} teams in section {{section_team.0}}</h2>
 <form method="post">
-  <input type="hidden" name="student" value=""/>
+  <input type="hidden" name="primary" value=""/>
+  <input type="hidden" name="secondary" value=""/>
   <input type="hidden" name="section" value="{{section_team.0}}"/>
   <input type="hidden" name="team" value=""/>
 
@@ -20,7 +24,7 @@
 </form>
 <ol>
   {% for t in section_team.1 %}
-  <li>
+  <li class="teamview">
     {{ t|safe }}
   </li>
   {% endfor %}

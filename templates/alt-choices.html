@@ -1,0 +1,13 @@
+<div class="dropdown">
+  <span class="{% for class in tags
+                         %} {{ class }}{% endfor %}">{{ self.current_string() }}</span>
+  <ul class="dropdown-content">
+    {% for p in possibilities %}
+    <li>
+      <input type="submit" name="{{ choice_name }}" class="{% for class in p.1.clone()
+             %} {{ class }}{% endfor %}{% if
+             self.is_current(p.0.clone()) %} current{% endif %}" value="{{ p.0.clone() }}"/>
+    </li>
+    {% endfor %}
+  </ul>
+</div>
