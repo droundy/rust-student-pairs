@@ -85,12 +85,19 @@ fn main() {
                 match post_input!(request, {
                     id: usize,
                     name: String,
+                    locked: bool,
                 }) {
                     Ok(input) => {
                         if input.id == data.list_days().len() {
                             data.add_day();
                         }
-                        data.name_day(input.id, input.name);
+                        if input.name != "" {
+                            data.name_day(input.id, input.name);
+                        } else {
+                            // By process of elimination, the check
+                            // button must have been hit.
+                            data.toggle_lock_day(Day::from(input.id));
+                        }
                     }
                     Err(e) => {
                         return Response::text(format!("Post / error: {:?}\n\n{:?}",
@@ -114,6 +121,10 @@ fn main() {
             },
             (POST) (/day/{today: Day}) => {
                 let today = data.improve_day(today);
+                if !data.day_unlocked(today) {
+                    return Response::text(format!("Cannot modify locked day: {}",
+                                                  today.pretty()));
+                }
                 match post_input!(request, {
                     team: String,
                     section: String,
@@ -172,6 +183,10 @@ fn main() {
             },
             (POST) (/pairs/{today: Day}) => {
                 let today = data.improve_day(today);
+                if !data.day_unlocked(today) {
+                    return Response::text(format!("Cannot modify locked day: {}",
+                                                  today.pretty()));
+                }
                 match post_input!(request, {
                     team: String,
                     section: String,

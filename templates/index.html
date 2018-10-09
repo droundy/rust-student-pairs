@@ -5,9 +5,11 @@
   {% for day in days %}
   <li>
     <form action="/" method="post">
-      <a href="/day/{{ day.id }}">{{ day }}</a>
+      <a href="/day/{{ day.id }}">{{ day|safe }}</a>
       <input type="hidden" name="id" value="{{day.id}}"/>
       <input type="text" name="name" value=""/>
+      <input type="checkbox" onchange="this.form.submit()"{%
+             if day.unlocked %} checked{%endif%} name="locked"/>
     </form>
   </li>
   {% endfor %}

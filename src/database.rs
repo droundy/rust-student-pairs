@@ -13,16 +13,18 @@ pub struct Day {
     pub id: usize,
     #[serde(default)]
     pub name: Option<Intern<String>>,
+    #[serde(default)]
+    pub unlocked: bool,
 }
 impl Day {
     pub fn next(&self) -> Self {
-        Day { id: self.id + 1, name: None }
+        Day::from(self.id + 1)
     }
     pub fn previous(&self) -> Self {
         if self.id == 0 {
             *self
         } else {
-            Day { id: self.id - 1, name: None }
+            Day::from(self.id - 1)
         }
     }
     pub fn pretty(&self) -> String {
@@ -35,7 +37,7 @@ impl Day {
 }
 impl From<usize> for Day {
     fn from(x: usize) -> Day {
-        Day { id: x, name: None }
+        Day { id: x, name: None, unlocked: false }
     }
 }
 impl FromStr for Day {
@@ -158,6 +160,8 @@ pub struct Data {
     days: Vec<HashSet<Pairing>>,
     #[serde(default)]
     daynames: HashMap<usize, Intern<String>>,
+    #[serde(default)]
+    days_unlocked: HashSet<usize>,
 }
 
 impl Data {
@@ -178,6 +182,7 @@ impl Data {
             student_sections: HashMap::new(),
             teams: HashSet::new(),
             daynames: HashMap::new(),
+            days_unlocked: HashSet::new(),
         }
     }
     pub fn day(&mut self, day: Day) -> &HashSet<Pairing> {
@@ -188,7 +193,7 @@ impl Data {
     }
     pub fn improve_day(&self, day: Day) -> Day {
         if let Some(&n) = self.daynames.get(&day.id) {
-            return Day { id: day.id, name: Some(n) };
+            return Day { id: day.id, name: Some(n), unlocked: self.day_unlocked(day) };
         }
         day
     }
@@ -622,6 +627,16 @@ impl Data {
         list.sort();
         list
     }
+    pub fn toggle_lock_day(&mut self, day: Day) {
+        if self.day_unlocked(day) {
+            self.days_unlocked.remove(&day.id);
+        } else {
+            self.days_unlocked.insert(day.id);
+        }
+    }
+    pub fn day_unlocked(&self, day: Day) -> bool {
+        self.days_unlocked.contains(&day.id)
+    }
     fn unassign_student(&mut self, day: Day, student: Student) {
         let mut newpairings: HashSet<_> =
             self.days[day.id].iter().cloned()
@@ -924,8 +939,8 @@ pub struct TeamOptions {
     pub current_pairing: Pairing,
 }
 
-impl TeamOptions {
-    fn is_on_team(&self, s: &Student) -> bool {
-        self.primary.is_current(*s) || self.secondary.is_current(*s)
-    }
-}
+// impl TeamOptions {
+//     fn is_on_team(&self, s: &Student) -> bool {
+//         self.primary.is_current(*s) || self.secondary.is_current(*s)
+//     }
+// }

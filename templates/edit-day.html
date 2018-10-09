@@ -4,7 +4,7 @@
           <li><a href="/pairs/{{ today.id }}">Team view</a></li>
 {% endblock %}
 {% block content %}
-<h1>Edit {{ today }} (<a href="/day/{{ today.previous().id
+<h1>Edit {{ today|safe }} (<a href="/day/{{ today.previous().id
                                }}">previous</a>, <a href="/day/{{ today.next().id }}">next</a>)</h1>
 
 {% for sec_students in all %}
