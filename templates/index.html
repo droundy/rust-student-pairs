@@ -3,11 +3,19 @@
 {% block content %}
 <ol>
   {% for day in days %}
-  <li><a href="/day/{{ day.id }}">{{ day }}</a></li>
+  <li>
+    <form action="/" method="post">
+      <a href="/day/{{ day.id }}">{{ day }}</a>
+      <input type="hidden" name="id" value="{{day.id}}"/>
+      <input type="text" name="name" value=""/>
+    </form>
+  </li>
   {% endfor %}
   <li>
     <form action="/" method="post">
-      <input type="submit" id="newday" name="newday" value="New day"/>
+      New day
+      <input type="hidden" name="id" value="{{days.len()}}"/>
+      <input type="text" name="name" value=""/>
     </form>
   </li>
 </ol>

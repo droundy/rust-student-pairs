@@ -7,25 +7,41 @@ use serde_yaml;
 use std::str::FromStr;
 use rand::{thread_rng,Rng};
 
-#[derive(Template,Serialize,Deserialize,Clone,Copy,PartialEq,Eq,PartialOrd,Ord)]
+#[derive(Template,Serialize,Deserialize,Clone,Copy,PartialEq,Eq,PartialOrd,Ord,Hash)]
 #[template(path = "day.html")]
-pub struct Day { pub id: usize }
+pub struct Day {
+    pub id: usize,
+    #[serde(default)]
+    pub name: Option<Intern<String>>,
+}
 impl Day {
     pub fn next(&self) -> Self {
-        Day { id: self.id + 1 }
+        Day { id: self.id + 1, name: None }
     }
     pub fn previous(&self) -> Self {
         if self.id == 0 {
             *self
         } else {
-            Day { id: self.id - 1 }
+            Day { id: self.id - 1, name: None }
         }
+    }
+    pub fn pretty(&self) -> String {
+        if let Some(n) = self.name {
+            format!("Day {}: {}", self.id, n)
+        } else {
+            format!("Day {}", self.id)
+        }
+    }
+}
+impl From<usize> for Day {
+    fn from(x: usize) -> Day {
+        Day { id: x, name: None }
     }
 }
 impl FromStr for Day {
     type Err = <usize as FromStr>::Err;
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        usize::from_str(s).map(|x| Day { id: x })
+        usize::from_str(s).map(|x| Day::from(x))
     }
 }
 
@@ -140,6 +156,8 @@ pub struct Data {
     sections: HashSet<Section>,
     teams: HashSet<Team>,
     days: Vec<HashSet<Pairing>>,
+    #[serde(default)]
+    daynames: HashMap<usize, Intern<String>>,
 }
 
 impl Data {
@@ -159,6 +177,7 @@ impl Data {
             sections: HashSet::new(),
             student_sections: HashMap::new(),
             teams: HashSet::new(),
+            daynames: HashMap::new(),
         }
     }
     pub fn day(&mut self, day: Day) -> &HashSet<Pairing> {
@@ -166,6 +185,15 @@ impl Data {
             self.days.push(HashSet::new());
         }
         return &self.days[day.id];
+    }
+    pub fn improve_day(&self, day: Day) -> Day {
+        if let Some(&n) = self.daynames.get(&day.id) {
+            return Day { id: day.id, name: Some(n) };
+        }
+        day
+    }
+    pub fn name_day(&mut self, id: usize, name: String) {
+        self.daynames.insert(id, Intern::new(name));
     }
     fn nonrepeat_partners_for_day(&self, day: Day, s1: Student, s2: Student) -> bool {
         for d in 0..day.id {
@@ -571,7 +599,7 @@ impl Data {
     }
 
     pub fn list_days(&self) -> Vec<Day> {
-        (0..self.days.len()).map(|i| Day { id: i }).collect()
+        (0..self.days.len()).map(|i| self.improve_day(Day::from(i))).collect()
     }
     pub fn add_day(&mut self) {
         self.days.push(HashSet::new());

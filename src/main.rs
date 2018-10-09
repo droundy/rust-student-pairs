@@ -82,13 +82,28 @@ fn main() {
                 page.render().unwrap()
             },
             (POST) (/) => {
-                data.add_day();
+                match post_input!(request, {
+                    id: usize,
+                    name: String,
+                }) {
+                    Ok(input) => {
+                        if input.id == data.list_days().len() {
+                            data.add_day();
+                        }
+                        data.name_day(input.id, input.name);
+                    }
+                    Err(e) => {
+                        return Response::text(format!("Post / error: {:?}\n\n{:?}",
+                                                      request, e));
+                    }
+                }
                 let page = Index {
                     days: data.list_days(),
                 };
                 page.render().unwrap()
             },
             (GET) (/day/{today: Day}) => {
+                let today = data.improve_day(today);
                 let page = EditDay {
                     today: today,
                     unassigned: data.unassigned_students(today),
@@ -98,6 +113,7 @@ fn main() {
                 page.render().unwrap()
             },
             (POST) (/day/{today: Day}) => {
+                let today = data.improve_day(today);
                 match post_input!(request, {
                     team: String,
                     section: String,
@@ -145,6 +161,7 @@ fn main() {
                 page.render().unwrap()
             },
             (GET) (/pairs/{today: Day}) => {
+                let today = data.improve_day(today);
                 let page = TeamView {
                     today: today,
                     unassigned: data.unassigned_students(today),
@@ -154,6 +171,7 @@ fn main() {
                 page.render().unwrap()
             },
             (POST) (/pairs/{today: Day}) => {
+                let today = data.improve_day(today);
                 match post_input!(request, {
                     team: String,
                     section: String,
