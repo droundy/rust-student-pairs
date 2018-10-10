@@ -4,7 +4,7 @@
 <li><a href="/day/{{ today.id }}">Student view</a></li>
 {% endblock %}
 {% block content %}
-<h1>Edit {{ today|safe }}
+<h1>{% if today.unlocked %}Edit {% endif %} {{ today|safe }}
   (<a href="/pairs/{{ today.previous().id
             }}">previous</a>, <a href="/pairs/{{ today.next().id }}">next</a>)
 </h1>
