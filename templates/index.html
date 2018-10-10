@@ -10,20 +10,19 @@
   {% for day in days %}
   <li>
     <form action="/" method="post">
-      <a href="/day/{{ day.id }}">{{ day|safe }}</a>
-      <input type="hidden" name="id" value="{{day.id}}"/>
-      <input type="text" name="name" value=""/>
-    </form>
-    <form action="/" method="post">
       <input type="hidden" name="id" value="{{day.id}}"/>
       <input type="hidden" name="name" value=""/>
       <button name="locked" class="lock{% if day.unlocked %} unlocked{%endif%}" type="submit"></button>
+    </form>
+    <form action="/" method="post">
+      <a href="/day/{{ day.id }}">{{ day.pretty()|safe }}</a>
+      <input type="hidden" name="id" value="{{day.id}}"/>
+      <input type="text" name="name" value=""/>
     </form>
   </li>
   {% endfor %}
   <li>
     <form action="/" method="post">
-      New day
       <input type="hidden" name="id" value="{{days.len()}}"/>
       <input type="text" name="name" value=""/>
     </form>
