@@ -85,7 +85,6 @@ fn main() {
                 match post_input!(request, {
                     id: usize,
                     name: String,
-                    locked: bool,
                 }) {
                     Ok(input) => {
                         if input.id == data.list_days().len() {

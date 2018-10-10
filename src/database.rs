@@ -29,7 +29,7 @@ impl Day {
     }
     pub fn pretty(&self) -> String {
         if let Some(n) = self.name {
-            format!("Day {}: {}", self.id, n)
+            (*n).clone()
         } else {
             format!("Day {}", self.id)
         }

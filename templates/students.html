@@ -1,5 +1,10 @@
 {% extends "base.html" %}
 
+{% block nav %}
+<li><a href="/students">Students</a></li>
+<li><a href="/sections">Sections</a></li>
+<li><a href="/teams">Teams</a></li>
+{% endblock %}
 {% block content %}
 {% for secstudents in sections %}
 <h2>{{ secstudents.0 }}</h2>

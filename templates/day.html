@@ -1,1 +1,1 @@
-{% if unlocked %}<img src="/unlocked.svg">{% else %}<img src="/locked.svg">{% endif %}{{ self.pretty()|safe }}
+<span class="lock{% if unlocked %} unlocked{%endif%}"></span>{{ self.pretty()|safe }}

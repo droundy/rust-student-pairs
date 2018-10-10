@@ -79,3 +79,86 @@ ol {
 .dropdown:hover .dropdown-content {
     display: block;
 }
+
+body {
+  --locked-color: #777777;
+  --unlocked-color: #ff5153;
+  --lock-height: 1em;
+}
+.lock {
+  display: inline-block;
+  width: var(--lock-height);
+  height: calc(var(--lock-height)/2);
+  background-color: var(--locked-color);
+  border: none;
+  border-radius: calc(var(--lock-height)*0.1);
+  position: relative;
+  bottom: 0;
+  margin-top: calc(var(--lock-height)/2);
+  margin-right: calc(var(--lock-height)*0.2);
+  padding: 0;
+  /* -webkit-transition: all 0.1s ease-in-out; */
+  /* transition: all 0.1s ease-in-out; */
+}
+.lock:after {
+  content: "";
+  display: block;
+  width: calc(var(--lock-height)*0.1);
+  height: calc(var(--lock-height)*0.1);
+  top: calc(var(--lock-height)*.15);
+  position: absolute;
+  left: calc(var(--lock-height)*(0.45));
+  margin: 0;
+  border-top: calc(var(--lock-height)*0.1) solid white;
+  background-color: white;
+  border-top-right-radius: calc(var(--lock-height)*.1);
+  border-top-left-radius: calc(var(--lock-height)*.1);
+  /* -webkit-transition: all 0.1s ease-in-out; */
+  /* transition: all 0.1s ease-in-out; */
+}
+.lock:before {
+  content: "";
+  display: block;
+  width: calc(var(--lock-height)*(1.0 - 2*0.1 - 2*0.2));
+  height: calc(var(--lock-height)*(0.5 - 0.2));
+  bottom: calc(var(--lock-height)/2);
+  position: absolute;
+  left: calc(var(--lock-height)*0.1);
+  margin: 0;
+  border: calc(var(--lock-height)*0.2) solid var(--locked-color);
+  border-top-right-radius: calc(var(--lock-height)*(1.0 - 2*0.1 - 2*0.2));
+  border-top-left-radius: calc(var(--lock-height)*(1.0 - 2*0.1 - 2*0.2));
+  border-bottom: 0;
+  /* -webkit-transition: all 0.1s ease-in-out; */
+  /* transition: all 0.1s ease-in-out; */
+}
+/* /\* Locked Hover *\/ */
+button.lock:hover:after {
+    background-color: black;
+    border-color: black;
+}
+button.lock:hover:before {
+  height: calc(var(--lock-height)*(0.5 - 0.15));
+  transform: rotate(3deg);
+}
+.unlocked:before {
+  bottom: 110%;
+  left: 30%;
+  transform: rotate(45deg);
+}
+.unlocked:before {
+  border-color: var(--unlocked-color);
+}
+.unlocked {
+  background: var(--unlocked-color);
+}
+/* /\* Unlocked Hover *\/ */
+button.unlocked:hover:before {
+  transform: rotate(20deg);
+  left: 20%;
+  height: calc(var(--lock-height)*(0.5 - 0.2));
+}
+
+form {
+    display: inline-block;
+}
