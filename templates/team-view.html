@@ -11,6 +11,7 @@
 
 {% for section_team in all %}
 <h2>{{section_team.1.len()}} teams in section {{section_team.0}}</h2>
+{% if today.unlocked %}
 <form method="post">
   <input type="hidden" name="primary" value=""/>
   <input type="hidden" name="secondary" value=""/>
@@ -22,13 +23,20 @@
   <input type="submit" name="action" value="Repeat"/>
   <input type="submit" name="action" value="Clear all"/>
 </form>
-<ol>
+{% endif %}
+<ul>
   {% for t in section_team.1 %}
   <li class="teamview">
-    {{ t|safe }}
+    {% if !today.unlocked %}
+    {{ t.team|safe }}:
+    <span>{{ t.primary.current_string()|safe }}</span>
+    <span>{{ t.secondary.current_string()|safe }}</span>
+    {% else %}
+      {{ t|safe }}
+    {% endif %}
   </li>
   {% endfor %}
-</ol>
+</ul>
 {% endfor %}
 
 <h2>{{unassigned.len()}} unassigned students</h2>
