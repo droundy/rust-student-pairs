@@ -48,7 +48,7 @@ ul {
     list-style-type: none;
 }
 article ul li {
-    padding: 0 0 0 4em;
+    padding: 0 0 0 2.5em;
     margin-left: -2em;
 }
 article ul li:nth-child(odd) {
@@ -60,7 +60,7 @@ article ul li:nth-child(odd) {
 }
 .teamview span {
     display: inline-block;
-    min-width: 10em;
+    min-width: 9em;
 }
 
 .previous {
