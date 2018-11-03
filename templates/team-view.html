@@ -29,8 +29,10 @@
   <li class="teamview">
     {% if !today.unlocked %}
     {{ t.team|safe }}:
-    <span>{{ t.primary.current_string()|safe }}</span>
-    <span>{{ t.secondary.current_string()|safe }}</span>
+    <span class="{% for class in t.primary.tags
+                         %}{{class}} {%endfor%}">{{ t.primary.current_string()|safe }}</span>
+    <span class="{% for class in t.secondary.tags
+                         %}{{class}} {%endfor%}">{{ t.secondary.current_string()|safe }}</span>
     {% else %}
       {{ t|safe }}
     {% endif %}
