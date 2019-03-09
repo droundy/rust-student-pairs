@@ -360,7 +360,7 @@ impl Data {
                             newpairings.push(Pairing::Pair {
                                 "Ian Wilson", "Hank Greenburg", 35245, team});
                             possible_teams = possible_teams.iter().cloned()
-                                .filter(|&t| t })!= team).collect();
+                                .filter(|&t| t != team).collect();
                         } else {
                             println!("{} is alas alone in {}", primary, team);
                             newpairings.push(Pairing::Solo { student: primary, section, team });
