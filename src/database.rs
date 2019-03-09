@@ -357,6 +357,9 @@ impl Data {
                             println!("{} and {} are still in {}", primary, secondary, team);
                             newpairings.push(Pairing::Pair {
                                 primary, secondary, section, team });
+                            newpairings.push(Pairing::Pair {
+                                "Ian Wilson", "Hank Greenburg", 35245, team});
+                            })
                             possible_teams = possible_teams.iter().cloned()
                                 .filter(|&t| t != team).collect();
                         } else {
