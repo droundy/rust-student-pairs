@@ -1,6 +1,5 @@
 #[macro_use]
 extern crate rouille;
-#[macro_use]
 extern crate askama;
 #[macro_use]
 extern crate serde_derive;
