@@ -5,7 +5,8 @@ use internment::Intern;
 use atomicfile::AtomicFile;
 use serde_yaml;
 use std::str::FromStr;
-use rand::{thread_rng,Rng};
+use rand::{thread_rng};
+use rand::seq::SliceRandom;
 
 #[derive(Template,Serialize,Deserialize,Clone,Copy,PartialEq,Eq,PartialOrd,Ord,Hash)]
 #[template(path = "day.html")]
@@ -154,9 +155,13 @@ impl Pairing {
 
 #[derive(Serialize,Deserialize,Clone,PartialEq,Eq)]
 pub struct Data {
+    #[serde(default)]
     student_sections: HashMap<Student, Section>,
+    #[serde(default)]
     sections: HashSet<Section>,
+    #[serde(default)]
     teams: HashSet<Team>,
+    #[serde(default)]
     days: Vec<HashSet<Pairing>>,
     #[serde(default)]
     daynames: HashMap<usize, Intern<String>>,
@@ -172,8 +177,13 @@ impl Data {
     }
     pub fn new() -> Self {
         if let Ok(f) = ::std::fs::File::open("pairs.yaml") {
-            if let Ok(s) = serde_yaml::from_reader::<_,Self>(&f) {
-                return s;
+            match serde_yaml::from_reader::<_,Self>(&f) {
+                Ok(s) => {
+                    return s;
+                }
+                Err(e) => {
+                    println!("Error reading: {:?}", e);
+                }
             }
         }
         Data {
@@ -245,8 +255,7 @@ impl Data {
     }
     pub fn shuffle(&mut self, day: Day, section: Section) {
         let mut students: Vec<Student> = self.students_present_in_section(day, section);
-        let mut rng = thread_rng();
-        rng.shuffle(&mut students);
+        students.shuffle(&mut thread_rng());
         self.days[day.id] = self.days[day.id].iter().cloned()
             .filter(|p| p.section() != Some(section)).collect();
         let mut possible_teams: Vec<_> =
@@ -268,8 +277,7 @@ impl Data {
     }
     pub fn shuffle_with_continuity(&mut self, day: Day, section: Section) {
         let mut students: Vec<Student> = self.students_present_in_section(day, section);
-        let mut rng = thread_rng();
-        rng.shuffle(&mut students);
+        students.shuffle(&mut thread_rng());
         let last_week_pairs: Vec<_> =
             if day.id > 0 {
                 self.days[day.id-1].iter().cloned()
@@ -287,7 +295,7 @@ impl Data {
             last_week_pairs.iter().cloned()
             .filter(|p| possible_teams.contains(&p.team().unwrap()))
             .collect();
-        rng.shuffle(&mut last_week_pairs);
+        last_week_pairs.shuffle(&mut thread_rng());
         let mut newpairings = Vec::new();
         for p in last_week_pairs.into_iter() {
             let team = p.team().unwrap();
@@ -324,8 +332,7 @@ impl Data {
     }
     pub fn repeat(&mut self, day: Day, section: Section) {
         let mut students: Vec<Student> = self.students_present_in_section(day, section);
-        let mut rng = thread_rng();
-        rng.shuffle(&mut students);
+        students.shuffle(&mut thread_rng());
         let last_week_pairs: Vec<_> =
             if day.id > 0 {
                 self.days[day.id-1].iter().cloned()
@@ -343,7 +350,7 @@ impl Data {
             last_week_pairs.iter().cloned()
             .filter(|p| possible_teams.contains(&p.team().unwrap()))
             .collect();
-        rng.shuffle(&mut last_week_pairs);
+        last_week_pairs.shuffle(&mut thread_rng());
         let mut newpairings = Vec::new();
         for p in last_week_pairs.iter().cloned() {
             println!("   {:?}", p);

@@ -3,17 +3,15 @@ name = "rust-student-pairs"
 version = "0.1.0"
 authors = ["droundy <roundyd@physics.oregonstate.edu>"]
 
-build = "build.rs"
-
 [dependencies]
-rouille = "2.1.0"
+rouille = "3.0.0"
 serde = "1.0"
 serde_derive = "1.0"
-serde_yaml = "0.7"
-askama = "0.7"
+serde_yaml = "0.8"
+askama = "0.8"
 tempfile = "3.0.3"
 internment = "0.3.6"
-rand = "0.5.5"
+rand = "0.7"
 
 [build-dependencies]
-askama = "0.7"
+askama = "0.8"
