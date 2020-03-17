@@ -7,11 +7,13 @@
 {% endblock %}
 {% block content %}
 <ol>
-  {% for s in sections %}
+  {% for (s,z) in sections %}
   <li>
     <form action="/sections" method="post">
       <input type="hidden" name="oldname" value="{{s.name}}"/>
       <input type="text" name="newname" value="{{s.name}}"/>
+      <input type="text" name="newzoom" value="{{z.id}}"/>
+      <input type="submit" name="action" value="Update section"/>
     </form>
   </li>
   {% endfor %}
@@ -20,6 +22,8 @@
       <label for="name">New section:</label>
       <input type="hidden" name="oldname" value=""/>
       <input type="text" name="newname" autofocus/>
+      <input type="text" name="newzoom"/>
+      <input type="submit" name="action" value="New section"/>
     </form>
   </li>
 </ol>

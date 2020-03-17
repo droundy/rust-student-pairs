@@ -58,6 +58,15 @@ impl From<String> for Section {
 }
 
 #[derive(Template,Serialize,Deserialize,Clone,Copy,Debug,PartialEq,Eq,PartialOrd,Ord,Hash)]
+#[template(path = "zoom.html")]
+pub struct Zoom { pub id: Intern<String> }
+impl From<String> for Zoom {
+    fn from(s: String) -> Self {
+        Zoom { id: Intern::new(s) }
+    }
+}
+
+#[derive(Template,Serialize,Deserialize,Clone,Copy,Debug,PartialEq,Eq,PartialOrd,Ord,Hash)]
 #[template(path = "section.html")]
 pub struct Student { pub name: Intern<String> }
 impl From<String> for Student {
@@ -158,7 +167,7 @@ pub struct Data {
     #[serde(default)]
     student_sections: HashMap<Student, Section>,
     #[serde(default)]
-    sections: HashSet<Section>,
+    sections: HashMap<Section, Zoom>,
     #[serde(default)]
     teams: HashSet<Team>,
     #[serde(default)]
@@ -188,7 +197,7 @@ impl Data {
         }
         Data {
             days: Vec::new(),
-            sections: HashSet::new(),
+            sections: HashMap::new(),
             student_sections: HashMap::new(),
             teams: HashSet::new(),
             daynames: HashMap::new(),
@@ -254,7 +263,7 @@ impl Data {
         students
     }
     pub fn shuffle_sections(&mut self, day: Day) {
-        let sections: Vec<_> = self.sections.iter().cloned().collect();
+        let sections: Vec<_> = self.sections.keys().cloned().collect();
         let pairings: Vec<_> = self.days[day.id].drain().collect();
         for (pairing, section) in pairings.into_iter().zip(sections.iter().cloned().cycle()) {
             match pairing {
@@ -271,7 +280,7 @@ impl Data {
         }
     }
     pub fn grand_shuffle(&mut self, day: Day) {
-        let section = self.sections.iter().cloned().next().expect("Oops, need a section");
+        let section = self.sections.keys().cloned().next().expect("Oops, need a section");
         let students: Vec<_> = self.student_sections.keys().cloned().collect();
         for student in students.into_iter() {
             self.unassign_student(day, student);
@@ -282,7 +291,7 @@ impl Data {
         self.shuffle_sections(day);
     }
     pub fn grand_shuffle_with_continuity(&mut self, day: Day) {
-        let section = self.sections.iter().cloned().next().expect("Oops, need a section");
+        let section = self.sections.keys().cloned().next().expect("Oops, need a section");
         let students: Vec<_> = self.student_sections.keys().cloned().collect();
         for student in students.into_iter() {
             self.unassign_student(day, student);
@@ -459,7 +468,7 @@ impl Data {
     }
     pub fn team_options(&self, day: Day) -> Vec<(Section, Vec<TeamOptions>)> {
         let mut section_options = Vec::new();
-        for section in self.sections.iter().cloned() {
+        for section in self.sections.keys().cloned() {
             let mut teams = Vec::new();
             let present_students = self.students_present_in_section(day, section);
             let unassigned: Vec<_> = self.unassigned_students(day).iter().cloned()
@@ -600,7 +609,7 @@ impl Data {
                     student: s,
                     current_pairing: current_pairing,
                     possible_teams: Vec::new(),
-                    possible_sections: self.sections.iter().cloned().collect(),
+                    possible_sections: self.sections.keys().cloned().collect(),
                     default_section: self.student_sections[&s],
                     previous_team: previous_team,
                 };
@@ -662,7 +671,7 @@ impl Data {
     }
     pub fn list_students_by_section(&self) -> Vec<(Section, Vec<Student>)> {
         let mut list = Vec::new();
-        for section in self.sections.iter().cloned() {
+        for section in self.sections.keys().cloned() {
             let mut students: Vec<Student> = self.student_sections.iter()
                 .filter(|(_,&sec)| sec == section)
                 .map(|(&s,_)| s)
@@ -806,12 +815,17 @@ impl Data {
     }
 
     pub fn list_sections(&self) -> Vec<Section> {
-        let mut list: Vec<_> = self.sections.iter().cloned().collect();
+        let mut list: Vec<_> = self.sections.keys().cloned().collect();
         list.sort();
         list
     }
-    pub fn new_section(&mut self, s: Section) {
-        self.sections.insert(s);
+    pub fn zoom_sections(&self) -> Vec<(Section, Zoom)> {
+        let mut list: Vec<_> = self.sections.iter().map(|(a,b)| (a.clone(), b.clone())).collect();
+        list.sort();
+        list
+    }
+    pub fn new_section(&mut self, s: Section, zoom: Zoom) {
+        self.sections.insert(s, zoom);
     }
     pub fn delete_section(&mut self, s: Section) {
         self.sections.remove(&s);
@@ -819,10 +833,10 @@ impl Data {
             d.retain(|p| p.section() != Some(s));
         }
     }
-    pub fn rename_section(&mut self, old_s: Section, new_s: Section) {
+    pub fn rename_section(&mut self, old_s: Section, new_s: Section, zoom: Zoom) {
         use database::Pairing::*;
-        self.sections.insert(new_s);
         self.sections.remove(&old_s);
+        self.sections.insert(new_s, zoom);
         for d in self.days.iter_mut() {
             let problems: Vec<_> = d.iter().cloned().filter(|&p| p.section() == Some(old_s)).collect();
             for mut p in problems {
@@ -844,6 +858,9 @@ impl Data {
         }
     }
 
+    pub fn get_zooms(&self) -> HashMap<Section, Zoom> {
+        self.sections.clone()
+    }
     pub fn list_teams(&self) -> Vec<Team> {
         let mut list: Vec<_> = self.teams.iter().cloned().collect();
         list.sort();

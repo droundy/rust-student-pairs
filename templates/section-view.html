@@ -11,7 +11,8 @@
 </h1>
 
 {% for section_team in all %}
-<h2>{{section_team.1.len()}} teams in section {{section_team.0}}</h2>
+<h2>{{section_team.1.len()}} teams in section {{section_team.0}}
+  {{ section_team.2|safe }}</h2>
 <ul>
   {% for t in section_team.1 %}
   <li class="teamview">

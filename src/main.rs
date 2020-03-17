@@ -15,7 +15,7 @@ pub mod database;
 use rouille::{Response};
 use askama::Template;
 
-use database::{Student, Day, Team, Section, StudentOptions, TeamOptions};
+use database::{Student, Day, Team, Section, Zoom, StudentOptions, TeamOptions};
 
 #[derive(Template, Serialize, Deserialize, Clone)]
 #[template(path = "edit-day.html")]
@@ -37,11 +37,11 @@ struct TeamView {
 
 #[derive(Template, Serialize, Deserialize, Clone)]
 #[template(path = "section-view.html")]
-struct DaySectionView {
+struct SectionView {
     today: Day,
     unassigned: Vec<Student>,
     absent: Vec<Student>,
-    all: Vec<(Section, Vec<TeamOptions>)>,
+    all: Vec<(Section, Vec<TeamOptions>, Zoom)>,
 }
 
 #[derive(Template, Serialize, Deserialize)]
@@ -60,7 +60,7 @@ struct Students {
 #[derive(Template, Serialize, Deserialize)]
 #[template(path = "sections.html")]
 struct Sections {
-    sections: Vec<Section>,
+    sections: Vec<(Section, Zoom)>,
 }
 
 #[derive(Template, Serialize, Deserialize)]
@@ -203,11 +203,14 @@ fn main() {
                 let mut unassigned = data.unassigned_students(today);
                 let absent = data.absent_students(today);
                 unassigned.retain(|s| !absent.contains(s));
-                let page = DaySectionView {
+                let zooms = data.get_zooms();
+                let page = SectionView {
                     today: today,
                     unassigned,
                     absent,
-                    all: data.team_options(today),
+                    all: data.team_options(today).into_iter()
+                        .map(|(sec,stu)| (sec, stu, zooms[&sec]))
+                        .collect(),
                 };
                 page.render().unwrap()
             },
@@ -316,7 +319,7 @@ fn main() {
             },
             (GET) (/sections) => {
                 let page = Sections {
-                    sections: data.list_sections(),
+                    sections: data.zoom_sections(),
                 };
                 page.render().unwrap()
             },
@@ -324,15 +327,21 @@ fn main() {
                 match post_input!(request, {
                     oldname: String,
                     newname: String,
+                    newzoom: String,
                 }) {
                     Ok(input) => {
+                        println!("posted to sections...");
+                        let zoom = Zoom::from(input.newzoom);
                         if input.oldname == "" {
-                            data.new_section(Section::from(input.newname));
+                            data.new_section(Section::from(input.newname), zoom);
                         } else if input.newname == "" {
                             data.delete_section(Section::from(input.oldname));
                         } else {
+                            println!("renaming... {} {} {:?}",
+                                     input.oldname, input.newname, zoom);
                             data.rename_section(Section::from(input.oldname),
-                                                Section::from(input.newname));
+                                                Section::from(input.newname),
+                                                zoom);
                         }
                     }
                     Err(e) => {
@@ -341,7 +350,7 @@ fn main() {
                     }
                 }
                 let page = Sections {
-                    sections: data.list_sections(),
+                    sections: data.zoom_sections(),
                 };
                 page.render().unwrap()
             },
