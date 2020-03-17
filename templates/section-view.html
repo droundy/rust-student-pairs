@@ -26,6 +26,7 @@
 </ul>
 {% endfor %}
 
+{% if unassigned.len() > 0 %}
 <h2>{{unassigned.len()}} unassigned students</h2>
 <ol>
   {% for s in unassigned %}
@@ -34,6 +35,7 @@
   </li>
   {% endfor %}
 </ol>
+{% endif %}
 
 <h2>{{absent.len()}} absent students</h2>
 <ol>
