@@ -23,12 +23,21 @@ struct EditDay {
     today: Day,
     unassigned: Vec<Student>,
     absent: Vec<Student>,
-    all: Vec<(Section, Vec<StudentOptions>)>,
+    all: Vec<StudentOptions>,
 }
 
 #[derive(Template, Serialize, Deserialize, Clone)]
 #[template(path = "team-view.html")]
 struct TeamView {
+    today: Day,
+    unassigned: Vec<Student>,
+    absent: Vec<Student>,
+    all: Vec<(Section, Vec<TeamOptions>)>,
+}
+
+#[derive(Template, Serialize, Deserialize, Clone)]
+#[template(path = "section-view.html")]
+struct DaySectionView {
     today: Day,
     unassigned: Vec<Student>,
     absent: Vec<Student>,
@@ -109,11 +118,13 @@ fn main() {
             },
             (GET) (/day/{today: Day}) => {
                 let today = data.improve_day(today);
+                let all: Vec<_> = data.student_options(today).into_iter()
+                    .flat_map(|(_,v)| v).collect();
                 let page = EditDay {
                     today: today,
                     unassigned: data.unassigned_students(today),
                     absent: data.absent_students(today),
-                    all: data.student_options(today),
+                    all,
                 };
                 page.render().unwrap()
             },
@@ -152,8 +163,14 @@ fn main() {
                             for s in data.students_present_in_section(today, section) {
                                 data.unpair_student(today, s);
                             }
+                        } else if input.action == "Grand shuffle" {
+                            println!("I should be doing grand shuffle...");
+                            data.grand_shuffle(today);
+                        } else if input.action == "Grand shuffle with continuity" {
+                            println!("I should be doing grand shuffle with continuity...");
+                            data.grand_shuffle_with_continuity(today);
                         } else {
-                            println!("What do I do with action {}?", input.action);
+                            println!("What do I do with action {:?}?", input.action);
                         }
                     }
                     Err(e) => {
@@ -161,11 +178,13 @@ fn main() {
                                                       request, e));
                     }
                 }
+                let all: Vec<_> = data.student_options(today).into_iter()
+                    .flat_map(|(_,v)| v).collect();
                 let page = EditDay {
                     today: today,
                     unassigned: data.unassigned_students(today),
                     absent: data.absent_students(today),
-                    all: data.student_options(today),
+                    all,
                 };
                 page.render().unwrap()
             },
@@ -175,6 +194,19 @@ fn main() {
                     today: today,
                     unassigned: data.unassigned_students(today),
                     absent: data.absent_students(today),
+                    all: data.team_options(today),
+                };
+                page.render().unwrap()
+            },
+            (GET) (/sections/{today: Day}) => {
+                let today = data.improve_day(today);
+                let mut unassigned = data.unassigned_students(today);
+                let absent = data.absent_students(today);
+                unassigned.retain(|s| !absent.contains(s));
+                let page = DaySectionView {
+                    today: today,
+                    unassigned,
+                    absent,
                     all: data.team_options(today),
                 };
                 page.render().unwrap()
@@ -221,8 +253,14 @@ fn main() {
                             for s in data.students_present_in_section(today, section) {
                                 data.unpair_student(today, s);
                             }
+                        } else if input.action == "Grand shuffle" {
+                            println!("I should be doing grand shuffle...");
+                            data.grand_shuffle(today);
+                        } else if input.action == "Grand shuffle with continuity" {
+                            println!("I should be doing grand shuffle with continuity...");
+                            data.grand_shuffle_with_continuity(today);
                         } else {
-                            println!("What do I do with action {}?", input.action);
+                            println!("What do I do with foolish action {:?}?", input.action);
                         }
                     }
                     Err(e) => {

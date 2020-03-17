@@ -253,6 +253,45 @@ impl Data {
         students.dedup();
         students
     }
+    pub fn shuffle_sections(&mut self, day: Day) {
+        let sections: Vec<_> = self.sections.iter().cloned().collect();
+        let pairings: Vec<_> = self.days[day.id].drain().collect();
+        for (pairing, section) in pairings.into_iter().zip(sections.iter().cloned().cycle()) {
+            match pairing {
+                Pairing::Pair { team, primary, secondary, .. } => {
+                    self.days[day.id].insert(Pairing::Pair { team, primary, secondary, section });
+                }
+                Pairing::Solo { team, student, ..  } => {
+                    self.days[day.id].insert(Pairing::Solo { team, student, section });
+                }
+                x => {
+                    self.days[day.id].insert(x);
+                }
+            }
+        }
+    }
+    pub fn grand_shuffle(&mut self, day: Day) {
+        let section = self.sections.iter().cloned().next().expect("Oops, need a section");
+        let students: Vec<_> = self.student_sections.keys().cloned().collect();
+        for student in students.into_iter() {
+            self.unassign_student(day, student);
+            self.days[day.id].insert(Pairing::Unassigned { student, section });
+        }
+
+        self.shuffle(day, section);
+        self.shuffle_sections(day);
+    }
+    pub fn grand_shuffle_with_continuity(&mut self, day: Day) {
+        let section = self.sections.iter().cloned().next().expect("Oops, need a section");
+        let students: Vec<_> = self.student_sections.keys().cloned().collect();
+        for student in students.into_iter() {
+            self.unassign_student(day, student);
+            self.days[day.id].insert(Pairing::Unassigned { student, section });
+        }
+        self.shuffle_with_continuity(day, section);
+
+        self.shuffle_sections(day);
+    }
     pub fn shuffle(&mut self, day: Day, section: Section) {
         let mut students: Vec<Student> = self.students_present_in_section(day, section);
         students.shuffle(&mut thread_rng());

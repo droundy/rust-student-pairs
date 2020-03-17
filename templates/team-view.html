@@ -2,12 +2,23 @@
 
 {% block nav %}
 <li><a href="/day/{{ today.id }}">Student view</a></li>
+<li><a href="/sections/{{ today.id }}">Over view</a></li>
 {% endblock %}
 {% block content %}
 <h1>{{ today|safe }}
   (<a href="/pairs/{{ today.previous().id
             }}">previous</a>, <a href="/pairs/{{ today.next().id }}">next</a>)
 </h1>
+
+<form method="post">
+  <input type="hidden" name="primary" value=""/>
+  <input type="hidden" name="secondary" value=""/>
+  <input type="hidden" name="section" value=""/>
+  <input type="hidden" name="team" value=""/>
+
+  <input type="submit" name="action" value="Grand shuffle"/>
+  <input type="submit" name="action" value="Grand shuffle with continuity"/>
+</form>
 
 {% for section_team in all %}
 <h2>{{section_team.1.len()}} teams in section {{section_team.0}}</h2>
@@ -58,13 +69,5 @@
   </li>
   {% endfor %}
 </ol>
-
-
-<form action="/day/{{ today.id }}" method="post">
-  <input type="submit" name="action" value="Shuffle"/>
-</form>
-<form action="/day/{{ today.id }}" method="post">
-  <input type="submit" name="action" value="Clear all"/>
-</form>
 
 {% endblock %}
