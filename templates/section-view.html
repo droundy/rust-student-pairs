@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+
+{% block nav %}
+<li><a href="/day/{{ today.id }}">Student view</a></li>
+<li><a href="/pairs/{{ today.id }}">Team view</a></li>
+{% endblock %}
+{% block content %}
+<h1>{{ today|safe }}
+  (<a href="/pairs/{{ today.previous().id
+            }}">previous</a>, <a href="/pairs/{{ today.next().id }}">next</a>)
+</h1>
+
+{% for section_team in all %}
+<h2>{{section_team.1.len()}} teams in section {{section_team.0}}</h2>
+<ul>
+  {% for t in section_team.1 %}
+  <li class="teamview">
+    {{ t.team|safe }}:
+    <span class="{% for class in t.primary.tags
+                         %}{{class}} {%endfor%}">{{ t.primary.current_string()|safe }}</span>
+    <span class="{% for class in t.secondary.tags
+                         %}{{class}} {%endfor%}">{{ t.secondary.current_string()|safe }}</span>
+  </li>
+  {% endfor %}
+</ul>
+{% endfor %}
+
+<h2>{{unassigned.len()}} unassigned students</h2>
+<ol>
+  {% for s in unassigned %}
+  <li>
+    {{ s }}
+  </li>
+  {% endfor %}
+</ol>
+
+<h2>{{absent.len()}} absent students</h2>
+<ol>
+  {% for s in absent %}
+  <li>
+    {{ s }}
+  </li>
+  {% endfor %}
+</ol>
+
+{% endblock %}
