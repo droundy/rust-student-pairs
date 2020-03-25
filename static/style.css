@@ -6,6 +6,14 @@ h2 {
     margin: 0 0 .1em 0;
     color: green;
 }
+h3 {
+    margin: 0 0 .1em 0;
+    font-weight: bold;
+}
+h4 {
+    margin: 0 0 .1em 0;
+    font-weight: bold;
+}
 
 nav {
     margin-left: -1em;
