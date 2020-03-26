@@ -159,15 +159,15 @@ fn main() {
                             println!("Repeating {}...", section);
                             data.repeat(today, section);
                         } else if input.action == "Clear all" {
-                            println!("I should be clearing all...");
+                            println!("Clearing all...");
                             for s in data.students_present_in_section(today, section) {
                                 data.unpair_student(today, s);
                             }
                         } else if input.action == "Grand shuffle" {
-                            println!("I should be doing grand shuffle...");
+                            println!("Grand shuffle...");
                             data.grand_shuffle(today);
                         } else if input.action == "Grand shuffle with continuity" {
-                            println!("I should be doing grand shuffle with continuity...");
+                            println!("Grand shuffle with continuity...");
                             data.grand_shuffle_with_continuity(today);
                         } else {
                             println!("What do I do with action {:?}?", input.action);
