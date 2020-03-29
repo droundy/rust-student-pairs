@@ -65,6 +65,12 @@ impl From<String> for Zoom {
         Zoom { id: Intern::new(s) }
     }
 }
+impl Zoom {
+    pub fn url(&self) -> String {
+        let clean = self.id.replace(&[' ', '-'][..], "");
+        format!("https://oregonstate.zoom.us/j/{}", self.id)
+    }
+}
 
 #[derive(Template,Serialize,Deserialize,Clone,Copy,Debug,PartialEq,Eq,PartialOrd,Ord,Hash)]
 #[template(path = "section.html")]
