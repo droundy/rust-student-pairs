@@ -1053,3 +1053,47 @@ pub struct TeamOptions {
 //         self.primary.is_current(*s) || self.secondary.is_current(*s)
 //     }
 // }
+
+fn split_evenly<T>(slice: &[T], n: usize) -> impl Iterator<Item = &[T]> {
+    struct Iter<'a, I> {
+        pub slice: &'a [I],
+        pub n: usize,
+    }
+    impl<'a, I> Iterator for Iter<'a, I> {
+        type Item = &'a [I];
+        fn next(&mut self) -> Option<&'a [I]> {
+            if self.slice.len() == 0 {
+                return None;
+            }
+            let extra = if self.slice.len() % self.n == 0 {
+                0
+            } else if self.slice.len() & 2 == 0 {
+                0
+            } else {
+                1
+            };
+            let (first, rest) = self.slice.split_at(self.slice.len() / self.n + extra);
+            self.slice = rest;
+            self.n -= 1;
+            Some(first)
+        }
+    }
+    Iter { slice, n }
+}
+
+#[test]
+fn test_split_evenly() {
+    let eight = [1,2,3,4,5,6,7,8];
+    let chunks: Vec<_> = split_evenly(&eight, 3).collect();
+    assert_eq!(&chunks, &[&[1,2][..], &[3,4,5][..], &[6,7,8][..]]);
+
+    let chunks: Vec<_> = split_evenly(&eight, 5).collect();
+    assert_eq!(&chunks, &[&[1][..], &[2,3][..], &[4][..], &[5,6][..], &[7,8][..]]);
+
+    let seven = [1,2,3,4,5,6,7];
+    let chunks: Vec<_> = split_evenly(&seven, 3).collect();
+    assert_eq!(&chunks, &[&[1,2,3][..], &[4,5][..], &[6,7][..]]);
+
+    let chunks: Vec<_> = split_evenly(&seven, 5).collect();
+    assert_eq!(&chunks, &[&[1,2][..], &[3][..], &[4][..], &[5,6][..], &[7][..]]);
+}
