@@ -5,9 +5,10 @@
 <li><a href="/pairs/{{ today.id }}">Team view</a></li>
 {% endblock %}
 {% block content %}
+(<a href="/pairs/{{ today.previous().id
+            }}">previous day</a>, <a href="/pairs/{{ today.next().id
+                                           }}">next day</a>)
 <h1>{{ today|safe }}
-  (<a href="/pairs/{{ today.previous().id
-            }}">previous</a>, <a href="/pairs/{{ today.next().id }}">next</a>)
 </h1>
 
 {% for section_team in all %}
