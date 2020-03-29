@@ -1073,7 +1073,6 @@ fn split_evenly<T>(slice: &[T], n: usize) -> impl Iterator<Item = &[T]> {
     impl<'a, I> Iterator for Iter<'a, I> {
         type Item = &'a [I];
         fn next(&mut self) -> Option<&'a [I]> {
-            use rand::Rng;
             if self.slice.len() == 0 {
                 return None;
             }
