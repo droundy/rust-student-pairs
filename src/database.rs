@@ -306,12 +306,55 @@ impl Data {
     }
     pub fn grand_shuffle_with_continuity(&mut self, day: Day) {
         let section = self.sections.keys().cloned().next().expect("Oops, need a section");
-        let students: Vec<_> = self.student_sections.keys().cloned().collect();
-        for student in students.into_iter() {
+        let mut students: Vec<_> = self.student_sections.keys().cloned().collect();
+        for &student in students.iter() {
             self.unassign_student(day, student);
             self.days[day.id].insert(Pairing::Unassigned { student, section });
         }
-        self.shuffle_with_continuity(day, section);
+        students.shuffle(&mut thread_rng());
+        let mut last_week_pairs: Vec<_> =
+            if day.id > 0 {
+                self.days[day.id-1].iter().cloned()
+                    .filter(|p| p.team().is_some())
+                    .collect()
+            } else {
+                Vec::new()
+            };
+        last_week_pairs.shuffle(&mut thread_rng());
+        self.days[day.id] = self.absent_students(day).into_iter().map(|s| Pairing::Absent(s)).collect();
+        let mut possible_teams: Vec<_> = self.teams.iter().cloned().collect();
+        let mut newpairings = Vec::new();
+        for p in last_week_pairs.into_iter() {
+            let team = p.team().unwrap();
+            for student in p.present_students() {
+                if remove_student_from_vec(student, &mut students).is_some() {
+                    possible_teams.retain(|&t| t != team);
+                    newpairings.push(Pairing::Solo {team, student, section});
+                    break;
+                }
+            }
+        }
+        for mut p in newpairings.into_iter() {
+            let primary = p.present_students()[0];
+            let team = p.team().unwrap();
+            if let Some(secondary) = self.pick_partner_from(day, primary, &mut students) {
+                p = Pairing::Pair { primary, secondary, section, team };
+            }
+            self.days[day.id].insert(p);
+        }
+        possible_teams.sort();
+        possible_teams.reverse();
+        while students.len() > 1 && possible_teams.len() > 0 {
+            let primary = students.pop().unwrap();
+            let team = possible_teams.pop().unwrap();
+            let secondary = self.pick_partner_from(day, primary, &mut students).unwrap();
+            self.days[day.id].insert(Pairing::Pair { primary, secondary, section, team });
+        }
+        if let Some(student) = students.pop() {
+            if let Some(team) = possible_teams.pop() {
+                self.days[day.id].insert(Pairing::Solo { student, team, section });
+            }
+        }
 
         self.shuffle_sections(day);
     }
@@ -348,8 +391,7 @@ impl Data {
             } else {
                 Vec::new()
             };
-        self.days[day.id] = self.days[day.id].iter().cloned()
-            .filter(|p| p.section() != Some(section)).collect();
+        self.days[day.id].retain(|p| p.section() != Some(section));
         let mut possible_teams: Vec<_> =
             self.teams.iter().cloned()
             .filter(|&t| !self.days[day.id].iter().any(|p| p.team() == Some(t))).collect();
@@ -1031,12 +1073,13 @@ fn split_evenly<T>(slice: &[T], n: usize) -> impl Iterator<Item = &[T]> {
     impl<'a, I> Iterator for Iter<'a, I> {
         type Item = &'a [I];
         fn next(&mut self) -> Option<&'a [I]> {
+            use rand::Rng;
             if self.slice.len() == 0 {
                 return None;
             }
             let extra = if self.slice.len() % self.n == 0 {
                 0
-            } else if self.am_odd {
+            } else if rand::random::<usize>() % self.n < self.slice.len() % self.n {
                 0
             } else {
                 1
@@ -1052,17 +1095,25 @@ fn split_evenly<T>(slice: &[T], n: usize) -> impl Iterator<Item = &[T]> {
 
 #[test]
 fn test_split_evenly() {
-    let eight = [1,2,3,4,5,6,7,8];
+    let eight: [usize; 8] = [1,2,3,4,5,6,7,8];
     let chunks: Vec<_> = split_evenly(&eight, 3).collect();
-    assert_eq!(&chunks, &[&[1,2,3][..], &[4,5,6][..], &[7,8][..]]);
+    assert_eq!(&eight[..], &chunks.iter().flat_map(|x| *x).cloned().collect::<Vec<usize>>()[..]);
+    assert_eq!(chunks.iter().map(|c| c.len()).max(), Some(3));
+    assert_eq!(chunks.iter().map(|c| c.len()).min(), Some(2));
 
     let chunks: Vec<_> = split_evenly(&eight, 5).collect();
-    assert_eq!(&chunks, &[&[1,2][..], &[3,4][..], &[5,6][..], &[7][..], &[8][..]]);
+    assert_eq!(&eight[..], &chunks.iter().flat_map(|x| *x).cloned().collect::<Vec<usize>>()[..]);
+    assert_eq!(chunks.iter().map(|c| c.len()).max(), Some(2));
+    assert_eq!(chunks.iter().map(|c| c.len()).min(), Some(1));
 
     let seven = [1,2,3,4,5,6,7];
     let chunks: Vec<_> = split_evenly(&seven, 3).collect();
-    assert_eq!(&chunks, &[&[1,2][..], &[3,4][..], &[5,6,7][..]]);
+    assert_eq!(&seven[..], &chunks.iter().flat_map(|x| *x).cloned().collect::<Vec<usize>>()[..]);
+    assert_eq!(chunks.iter().map(|c| c.len()).max(), Some(3));
+    assert_eq!(chunks.iter().map(|c| c.len()).min(), Some(2));
 
     let chunks: Vec<_> = split_evenly(&seven, 5).collect();
-    assert_eq!(&chunks, &[&[1][..], &[2][..], &[3][..], &[4,5][..], &[6,7][..]]);
+    assert_eq!(&seven[..], &chunks.iter().flat_map(|x| *x).cloned().collect::<Vec<usize>>()[..]);
+    assert_eq!(chunks.iter().map(|c| c.len()).max(), Some(2));
+    assert_eq!(chunks.iter().map(|c| c.len()).min(), Some(1));
 }
