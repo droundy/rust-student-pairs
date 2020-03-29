@@ -272,44 +272,12 @@ impl Data {
         let mut sections: Vec<_> = self.sections.keys().cloned().collect();
         sections.sort();
         let mut pairings: Vec<_> = self.days[day.id].drain().collect();
-        pairings.sort_by_key(|p| {
-            match p {
-                Pairing::Pair { team, .. } => (*team.name).clone(),
-                Pairing::Solo { team, ..  } => (*team.name).clone(),
-                _ => "ZZZZZZZZZZZZZ".to_string(),
-            }
-        });
-        let num_teams = pairings.iter().flat_map(|p| p.team()).count();
-        let chunk_size = num_teams/sections.len();
-        let mut teams_done = 0;
-        for i in 0..sections.len() {
-            let sections_left = sections.len() - i;
-            let teams_left = num_teams - teams_done;
-            let teams_for_me = if teams_left % sections_left == 0 {
-                teams_left/sections_left
-            } else {
-                teams_left/sections_left + 1
-            };
-            let section = sections[i];
-            for t in teams_done..teams_done+teams_for_me {
-                match pairings[t] {
-                    Pairing::Pair { team, primary, secondary, .. } => {
-                        self.days[day.id].insert(Pairing::Pair { team, primary, secondary, section });
-                    }
-                    Pairing::Solo { team, student, ..  } => {
-                        self.days[day.id].insert(Pairing::Solo { team, student, section });
-                    }
-                    x => {
-                        self.days[day.id].insert(x);
-                    }
-                }
-            }
-            teams_done += teams_for_me;
-        }
-        for t in teams_done..pairings.len() {
-            self.days[day.id].insert(pairings[t].clone());
-        }
-        for (p, section) in pairings.chunks(chunk_size).zip(sections.iter().cloned()) {
+        println!("we have {} total pairings", pairings.len());
+        self.days[day.id].extend(pairings.iter().filter(|p| !p.team().is_some()).cloned());
+        pairings.retain(|p| p.team().is_some());
+        println!("we have {} pairings that have a team", pairings.len());
+        pairings.sort_by_key(|p| p.team());
+        for (p, section) in split_evenly(&pairings, sections.len()).zip(sections.into_iter()) {
             for pairing in p.iter().cloned() {
                 match pairing {
                     Pairing::Pair { team, primary, secondary, .. } => {
@@ -1058,6 +1026,7 @@ fn split_evenly<T>(slice: &[T], n: usize) -> impl Iterator<Item = &[T]> {
     struct Iter<'a, I> {
         pub slice: &'a [I],
         pub n: usize,
+        pub am_odd: bool,
     }
     impl<'a, I> Iterator for Iter<'a, I> {
         type Item = &'a [I];
@@ -1067,7 +1036,7 @@ fn split_evenly<T>(slice: &[T], n: usize) -> impl Iterator<Item = &[T]> {
             }
             let extra = if self.slice.len() % self.n == 0 {
                 0
-            } else if self.slice.len() & 2 == 0 {
+            } else if self.am_odd {
                 0
             } else {
                 1
@@ -1078,22 +1047,22 @@ fn split_evenly<T>(slice: &[T], n: usize) -> impl Iterator<Item = &[T]> {
             Some(first)
         }
     }
-    Iter { slice, n }
+    Iter { slice, n, am_odd: slice.len() & 1 == 1 }
 }
 
 #[test]
 fn test_split_evenly() {
     let eight = [1,2,3,4,5,6,7,8];
     let chunks: Vec<_> = split_evenly(&eight, 3).collect();
-    assert_eq!(&chunks, &[&[1,2][..], &[3,4,5][..], &[6,7,8][..]]);
+    assert_eq!(&chunks, &[&[1,2,3][..], &[4,5,6][..], &[7,8][..]]);
 
     let chunks: Vec<_> = split_evenly(&eight, 5).collect();
-    assert_eq!(&chunks, &[&[1][..], &[2,3][..], &[4][..], &[5,6][..], &[7,8][..]]);
+    assert_eq!(&chunks, &[&[1,2][..], &[3,4][..], &[5,6][..], &[7][..], &[8][..]]);
 
     let seven = [1,2,3,4,5,6,7];
     let chunks: Vec<_> = split_evenly(&seven, 3).collect();
-    assert_eq!(&chunks, &[&[1,2,3][..], &[4,5][..], &[6,7][..]]);
+    assert_eq!(&chunks, &[&[1,2][..], &[3,4][..], &[5,6,7][..]]);
 
     let chunks: Vec<_> = split_evenly(&seven, 5).collect();
-    assert_eq!(&chunks, &[&[1,2][..], &[3][..], &[4][..], &[5,6][..], &[7][..]]);
+    assert_eq!(&chunks, &[&[1][..], &[2][..], &[3][..], &[4,5][..], &[6,7][..]]);
 }
