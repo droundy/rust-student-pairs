@@ -1083,12 +1083,13 @@ fn split_evenly<T>(slice: &[T], n: usize) -> impl Iterator<Item = &[T]> {
             if self.slice.len() == 0 {
                 return None;
             }
-            let extra = if self.slice.len() % self.n == 0 {
+            let leftovers = self.slice.len() % self.n;
+            let extra = if leftovers == 0 {
                 0
-            } else if rand::random::<usize>() % self.n < self.slice.len() % self.n {
-                0
-            } else {
+            } else if rand::random::<usize>() % self.n < leftovers {
                 1
+            } else {
+                0
             };
             let (first, rest) = self.slice.split_at(self.slice.len() / self.n + extra);
             self.slice = rest;
@@ -1122,4 +1123,26 @@ fn test_split_evenly() {
     assert_eq!(&seven[..], &chunks.iter().flat_map(|x| *x).cloned().collect::<Vec<usize>>()[..]);
     assert_eq!(chunks.iter().map(|c| c.len()).max(), Some(2));
     assert_eq!(chunks.iter().map(|c| c.len()).min(), Some(1));
+
+
+    let nineteen: [usize; 19] = [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19];
+
+    let chunks: Vec<_> = split_evenly(&nineteen, 5).collect();
+    assert_eq!(&nineteen[..], &chunks.iter().flat_map(|x| *x).cloned().collect::<Vec<usize>>()[..]);
+    assert_eq!(chunks.iter().map(|c| c.len()).max(), Some(4));
+    assert_eq!(chunks.iter().map(|c| c.len()).min(), Some(3));
+
+    let mut last_was_small = false;
+    for _ in 0..60 {
+        let chunks: Vec<_> = split_evenly(&nineteen, 5).collect();
+        assert_eq!(&nineteen[..], &chunks.iter().flat_map(|x| *x).cloned().collect::<Vec<usize>>()[..]);
+        assert_eq!(chunks.iter().map(|c| c.len()).max(), Some(4));
+        assert_eq!(chunks.iter().map(|c| c.len()).min(), Some(3));
+
+        println!("  {:?}", chunks.iter().map(|c| c.len()).collect::<Vec<_>>());
+        if chunks[4].len() == 3 {
+            last_was_small = true;
+        }
+    }
+    assert!(last_was_small);
 }
