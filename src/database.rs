@@ -302,7 +302,9 @@ impl Data {
     }
     pub fn grand_shuffle(&mut self, day: Day) {
         let section = self.sections.keys().cloned().next().expect("Oops, need a section");
-        let students: Vec<_> = self.student_sections.keys().cloned().collect();
+        let absent: Vec<_> = self.absent_students(day);
+        let mut students: Vec<_> = self.student_sections.keys().cloned()
+            .filter(|s| !absent.contains(s)).collect();
         for student in students.into_iter() {
             self.unassign_student(day, student);
             self.days[day.id].insert(Pairing::Unassigned { student, section });
@@ -313,7 +315,9 @@ impl Data {
     }
     pub fn grand_shuffle_with_continuity(&mut self, day: Day) {
         let section = self.sections.keys().cloned().next().expect("Oops, need a section");
-        let mut students: Vec<_> = self.student_sections.keys().cloned().collect();
+        let absent: Vec<_> = self.absent_students(day);
+        let mut students: Vec<_> = self.student_sections.keys().cloned()
+            .filter(|s| !absent.contains(s)).collect();
         for &student in students.iter() {
             self.unassign_student(day, student);
             self.days[day.id].insert(Pairing::Unassigned { student, section });
@@ -328,7 +332,7 @@ impl Data {
                 Vec::new()
             };
         last_week_pairs.shuffle(&mut thread_rng());
-        self.days[day.id] = self.absent_students(day).into_iter().map(|s| Pairing::Absent(s)).collect();
+        self.days[day.id] = absent.into_iter().map(|s| Pairing::Absent(s)).collect();
         let mut possible_teams: Vec<_> = self.teams.iter().cloned().collect();
         let mut newpairings = Vec::new();
         for p in last_week_pairs.into_iter() {

@@ -5,8 +5,8 @@
 <li><a href="/pairs/{{ today.id }}">Team view</a></li>
 {% endblock %}
 {% block content %}
-(<a href="/pairs/{{ today.previous().id
-            }}">previous day</a>, <a href="/pairs/{{ today.next().id
+(<a href="/sections/{{ today.previous().id
+            }}">previous day</a>, <a href="/sections/{{ today.next().id
                                            }}">next day</a>)
 <h1>{{ today|safe }}
 </h1>
