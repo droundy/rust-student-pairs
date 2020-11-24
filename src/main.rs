@@ -79,6 +79,11 @@ struct Teams {
     teams: Vec<Team>,
     path: String,
 }
+impl Teams {
+    fn random(&self) -> String {
+        format!("{:02}-{}", self.teams.len()+1, memorable_wordlist::camel_case(33))
+    }
+}
 
 #[derive(Serialize, Deserialize, Debug)]
 struct NewStudent {

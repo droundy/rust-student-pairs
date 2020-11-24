@@ -21,6 +21,10 @@
       <input type="hidden" name="oldname" value=""/>
       <input type="text" name="newname" autofocus/>
     </form>
+    <form action="/pairs/{{ path }}/teams" method="post">
+      <input type="hidden" name="oldname" value=""/>
+      <input type="submit" name="newname" value="{{ self.random() }}"/>
+    </form>
   </li>
 </ol>
 {% endblock %}
