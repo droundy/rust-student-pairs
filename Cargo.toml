@@ -10,7 +10,7 @@ serde_derive = "1.0"
 serde_yaml = "0.8"
 askama = "0.8"
 tempfile = "3.0.3"
-internment = "0.3.6"
+internment = { version = "0.4", features = ["serde"] }
 rand = "0.7"
 
 [build-dependencies]
