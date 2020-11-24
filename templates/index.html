@@ -1,28 +1,28 @@
 {% extends "base.html" %}
 
 {% block nav %}
-<li><a href="/{{ path }}/students">Students</a></li>
-<li><a href="/{{ path }}/sections">Sections</a></li>
-<li><a href="/{{ path }}/teams">Teams</a></li>
+<li><a href="/pairs/{{ path }}/students">Students</a></li>
+<li><a href="/pairs/{{ path }}/sections">Sections</a></li>
+<li><a href="/pairs/{{ path }}/teams">Teams</a></li>
 {% endblock %}
 {% block content %}
 <ol>
   {% for day in days %}
   <li>
-    <form action="/{{ path }}/" method="post">
+    <form action="/pairs/{{ path }}/" method="post">
       <input type="hidden" name="id" value="{{day.id}}"/>
       <input type="hidden" name="name" value=""/>
       <button name="locked" class="lock{% if day.unlocked %} unlocked{%endif%}" type="submit"></button>
     </form>
-    <form action="/{{ path }}/" method="post">
-      <a href="/{{ path }}/pairs/{{ day.id }}">{{ day.pretty()|safe }}</a>
+    <form action="/pairs/{{ path }}/" method="post">
+      <a href="/pairs/{{ path }}/pairs/{{ day.id }}">{{ day.pretty()|safe }}</a>
       <input type="hidden" name="id" value="{{day.id}}"/>
       <input type="text" name="name" value=""/>
     </form>
   </li>
   {% endfor %}
   <li>
-    <form action="/{{ path }}/" method="post">
+    <form action="/pairs/{{ path }}/" method="post">
       <input type="hidden" name="id" value="{{days.len()}}"/>
       <input type="text" name="name" value=""/>
     </form>

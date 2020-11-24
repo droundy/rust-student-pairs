@@ -90,9 +90,12 @@ fn main() {
         router!{
             request,
             (GET) (/) => {
-                rouille::Response::redirect_303(format!("/{}/", memorable_wordlist::camel_case(44)))
+                rouille::Response::redirect_303(format!("/pairs/{}/", memorable_wordlist::camel_case(44)))
             },
-            (GET) (/{path: String}/) => {
+            (GET) (/pairs/) => {
+                rouille::Response::redirect_303(format!("/pairs/{}/", memorable_wordlist::camel_case(44)))
+            },
+            (GET) (/pairs/{path: String}/) => {
                 let data = database::Data::new(&path);
                 let page = Index {
                     path: path.to_string(),
@@ -100,7 +103,7 @@ fn main() {
                 };
                 Response::html(page.render().unwrap())
             },
-            (POST) (/{path: String}/) => {
+            (POST) (/pairs/{path: String}/) => {
                 let mut data = database::Data::new(&path);
                 match post_input!(request, {
                     id: usize,
@@ -130,7 +133,7 @@ fn main() {
                 data.save();
                 Response::html(page.render().unwrap())
             },
-            (GET) (/{path: String}/day/{today: Day}) => {
+            (GET) (/pairs/{path: String}/day/{today: Day}) => {
                 let data = database::Data::new(&path);
                 let today = data.improve_day(today);
                 let all: Vec<_> = data.student_options(today).into_iter()
@@ -144,7 +147,7 @@ fn main() {
                 };
                 Response::html(page.render().unwrap())
             },
-            (POST) (/{path: String}/day/{today: Day}) => {
+            (POST) (/pairs/{path: String}/day/{today: Day}) => {
                 let mut data = database::Data::new(&path);
                 let today = data.improve_day(today);
                 if !data.day_unlocked(today) {
@@ -207,7 +210,7 @@ fn main() {
                 data.save();
                 Response::html(page.render().unwrap())
             },
-            (GET) (/{path: String}/pairs/{today: Day}) => {
+            (GET) (/pairs/{path: String}/pairs/{today: Day}) => {
                 let data = database::Data::new(&path);
                 let today = data.improve_day(today);
                 let page = TeamView {
@@ -219,7 +222,7 @@ fn main() {
                 };
                 Response::html(page.render().unwrap())
             },
-            (GET) (/{path: String}/sections/{today: Day}) => {
+            (GET) (/pairs/{path: String}/sections/{today: Day}) => {
                 let data = database::Data::new(&path);
                 let today = data.improve_day(today);
                 let mut unassigned = data.unassigned_students(today);
@@ -237,7 +240,7 @@ fn main() {
                 };
                 Response::html(page.render().unwrap())
             },
-            (POST) (/{path: String}/pairs/{today: Day}) => {
+            (POST) (/pairs/{path: String}/pairs/{today: Day}) => {
                 let mut data = database::Data::new(&path);
                 let today = data.improve_day(today);
                 if !data.day_unlocked(today) {
@@ -305,7 +308,7 @@ fn main() {
                 data.save();
                 Response::html(page.render().unwrap())
             },
-            (GET) (/{path: String}/students) => {
+            (GET) (/pairs/{path: String}/students) => {
                 let data = database::Data::new(&path);
                 let page = Students {
                     path: path.to_string(),
@@ -314,7 +317,7 @@ fn main() {
                 };
                 Response::html(page.render().unwrap())
             },
-            (POST) (/{path: String}/students) => {
+            (POST) (/pairs/{path: String}/students) => {
                 let mut data = database::Data::new(&path);
                 let focus_section;
                 match post_input!(request, {
@@ -348,7 +351,7 @@ fn main() {
                 data.save();
                 Response::html(page.render().unwrap())
             },
-            (GET) (/{path: String}/sections) => {
+            (GET) (/pairs/{path: String}/sections) => {
                 let data = database::Data::new(&path);
                 let page = Sections {
                     path: path.to_string(),
@@ -356,7 +359,7 @@ fn main() {
                 };
                 Response::html(page.render().unwrap())
             },
-            (POST) (/{path: String}/sections) => {
+            (POST) (/pairs/{path: String}/sections) => {
                 let mut data = database::Data::new(&path);
                 match post_input!(request, {
                     oldname: String,
@@ -390,7 +393,7 @@ fn main() {
                 data.save();
                 Response::html(page.render().unwrap())
             },
-            (GET) (/{path: String}/teams) => {
+            (GET) (/pairs/{path: String}/teams) => {
                 let data = database::Data::new(&path);
                 let page = Teams {
                     path: path.to_string(),
@@ -398,7 +401,7 @@ fn main() {
                 };
                 Response::html(page.render().unwrap())
             },
-            (POST) (/{path: String}/teams) => {
+            (POST) (/pairs/{path: String}/teams) => {
                 let mut data = database::Data::new(&path);
                 match post_input!(request, {
                     oldname: String,

@@ -1,9 +1,9 @@
 {% extends "base.html" %}
 
 {% block nav %}
-<li><a href="/{{ path }}/students">Students</a></li>
-<li><a href="/{{ path }}/sections">Sections</a></li>
-<li><a href="/{{ path }}/teams">Teams</a></li>
+<li><a href="/pairs/{{ path }}/students">Students</a></li>
+<li><a href="/pairs/{{ path }}/sections">Sections</a></li>
+<li><a href="/pairs/{{ path }}/teams">Teams</a></li>
 {% endblock %}
 {% block content %}
 {% for secstudents in sections %}
@@ -11,7 +11,7 @@
 <ol>
   {% for s in secstudents.1 %}
   <li>
-    <form action="/{{ path }}/students" method="post">
+    <form action="/pairs/{{ path }}/students" method="post">
       <select name="section" onchange="this.form.submit()">
         {% for s in sections %}
         <option value="{{ s.0 }}"{% if
@@ -24,7 +24,7 @@
   </li>
   {% endfor %}
   <li>
-    <form action="/{{ path }}/students" method="post">
+    <form action="/pairs/{{ path }}/students" method="post">
       <label for="name">New student:</label>
       <input type="hidden" name="section" value="{{secstudents.0}}"/>
       <input type="hidden" name="oldname" value=""/>
