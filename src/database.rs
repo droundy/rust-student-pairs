@@ -303,7 +303,7 @@ impl Data {
     pub fn grand_shuffle(&mut self, day: Day) {
         let section = self.sections.keys().cloned().next().expect("Oops, need a section");
         let absent: Vec<_> = self.absent_students(day);
-        let mut students: Vec<_> = self.student_sections.keys().cloned()
+        let students: Vec<_> = self.student_sections.keys().cloned()
             .filter(|s| !absent.contains(s)).collect();
         for student in students.into_iter() {
             self.unassign_student(day, student);
