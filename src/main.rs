@@ -55,6 +55,10 @@ struct Index {
 }
 
 #[derive(Template, Serialize, Deserialize)]
+#[template(path = "style.html")]
+struct Css;
+
+#[derive(Template, Serialize, Deserialize)]
 #[template(path = "students.html")]
 struct Students {
     sections: Vec<(Section, Vec<Student>)>,
@@ -83,8 +87,16 @@ struct NewStudent {
 fn main() {
     println!("I am running now!!!");
     rouille::start_server("0.0.0.0:8088", move |request| {
-        let response = rouille::match_assets(&request, "static");
-        if response.is_success() {
+        let is_css = router!{
+            request,
+            (GET) ["/pairs/style.css"] => {
+                Some(Response::from_data("text/css", Css.render().unwrap()))
+            },
+            _ => {
+                None
+            },
+        };
+        if let Some(response) = is_css {
             return response;
         }
         router!{
