@@ -12,6 +12,7 @@ askama = "0.8"
 tempfile = "3.0.3"
 internment = { version = "0.4", features = ["serde"] }
 rand = "0.7"
+memorable-wordlist = "0.1.7"
 
 [build-dependencies]
 askama = "0.8"

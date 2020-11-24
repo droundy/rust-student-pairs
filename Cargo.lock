@@ -485,6 +485,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0ee1c47aaa256ecabcaea351eae4a9b01ef39ed810004e298d2511ed284b1525"
 
 [[package]]
+name = "memorable-wordlist"
+version = "0.1.7"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "673c6a442e72f0bca457afb369a8130596eeeb51c80a38b1dd39b6c490ed36c1"
+dependencies = [
+ "rand 0.7.3",
+]
+
+[[package]]
 name = "mime"
 version = "0.2.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -918,6 +927,7 @@ version = "0.1.0"
 dependencies = [
  "askama",
  "internment",
+ "memorable-wordlist",
  "rand 0.7.3",
  "rouille",
  "serde",

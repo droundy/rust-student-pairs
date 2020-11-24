@@ -1,22 +1,22 @@
 {% extends "base.html" %}
 
 {% block nav %}
-<li><a href="/students">Students</a></li>
-<li><a href="/sections">Sections</a></li>
-<li><a href="/teams">Teams</a></li>
+<li><a href="/{{ path }}/students">Students</a></li>
+<li><a href="/{{ path }}/sections">Sections</a></li>
+<li><a href="/{{ path }}/teams">Teams</a></li>
 {% endblock %}
 {% block content %}
 <ol>
   {% for s in teams %}
   <li>
-    <form action="/teams" method="post">
+    <form action="/{{ path }}/teams" method="post">
       <input type="hidden" name="oldname" value="{{s.name}}"/>
       <input type="text" name="newname" value="{{s.name}}"/>
     </form>
   </li>
   {% endfor %}
   <li>
-    <form action="/teams" method="post">
+    <form action="/{{ path }}/teams" method="post">
       <label for="name">New team:</label>
       <input type="hidden" name="oldname" value=""/>
       <input type="text" name="newname" autofocus/>

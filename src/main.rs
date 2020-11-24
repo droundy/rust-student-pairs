@@ -24,6 +24,7 @@ struct EditDay {
     unassigned: Vec<Student>,
     absent: Vec<Student>,
     all: Vec<StudentOptions>,
+    path: String,
 }
 
 #[derive(Template, Serialize, Deserialize, Clone)]
@@ -33,6 +34,7 @@ struct TeamView {
     unassigned: Vec<Student>,
     absent: Vec<Student>,
     all: Vec<(Section, Vec<TeamOptions>)>,
+    path: String,
 }
 
 #[derive(Template, Serialize, Deserialize, Clone)]
@@ -42,12 +44,14 @@ struct SectionView {
     unassigned: Vec<Student>,
     absent: Vec<Student>,
     all: Vec<(Section, Vec<TeamOptions>, Zoom)>,
+    path: String,
 }
 
 #[derive(Template, Serialize, Deserialize)]
 #[template(path = "index.html")]
 struct Index {
     days: Vec<Day>,
+    path: String,
 }
 
 #[derive(Template, Serialize, Deserialize)]
@@ -55,18 +59,21 @@ struct Index {
 struct Students {
     sections: Vec<(Section, Vec<Student>)>,
     focus_section: Section,
+    path: String,
 }
 
 #[derive(Template, Serialize, Deserialize)]
 #[template(path = "sections.html")]
 struct Sections {
     sections: Vec<(Section, Zoom)>,
+    path: String,
 }
 
 #[derive(Template, Serialize, Deserialize)]
 #[template(path = "teams.html")]
 struct Teams {
     teams: Vec<Team>,
+    path: String,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -80,16 +87,21 @@ fn main() {
         if response.is_success() {
             return response;
         }
-        let mut data = database::Data::new();
-        let html = router!{
+        router!{
             request,
             (GET) (/) => {
+                rouille::Response::redirect_303(format!("/{}/", memorable_wordlist::camel_case(44)))
+            },
+            (GET) (/{path: String}/) => {
+                let data = database::Data::new(&path);
                 let page = Index {
+                    path: path.to_string(),
                     days: data.list_days(),
                 };
-                page.render().unwrap()
+                Response::html(page.render().unwrap())
             },
-            (POST) (/) => {
+            (POST) (/{path: String}/) => {
+                let mut data = database::Data::new(&path);
                 match post_input!(request, {
                     id: usize,
                     name: String,
@@ -112,23 +124,28 @@ fn main() {
                     }
                 }
                 let page = Index {
+                    path: path.to_string(),
                     days: data.list_days(),
                 };
-                page.render().unwrap()
+                data.save();
+                Response::html(page.render().unwrap())
             },
-            (GET) (/day/{today: Day}) => {
+            (GET) (/{path: String}/day/{today: Day}) => {
+                let data = database::Data::new(&path);
                 let today = data.improve_day(today);
                 let all: Vec<_> = data.student_options(today).into_iter()
                     .flat_map(|(_,v)| v).collect();
                 let page = EditDay {
+                    path: path.to_string(),
                     today: today,
                     unassigned: data.unassigned_students(today),
                     absent: data.absent_students(today),
                     all,
                 };
-                page.render().unwrap()
+                Response::html(page.render().unwrap())
             },
-            (POST) (/day/{today: Day}) => {
+            (POST) (/{path: String}/day/{today: Day}) => {
+                let mut data = database::Data::new(&path);
                 let today = data.improve_day(today);
                 if !data.day_unlocked(today) {
                     return Response::text(format!("Cannot modify locked day: {}",
@@ -181,30 +198,36 @@ fn main() {
                 let all: Vec<_> = data.student_options(today).into_iter()
                     .flat_map(|(_,v)| v).collect();
                 let page = EditDay {
+                    path: path.to_string(),
                     today: today,
                     unassigned: data.unassigned_students(today),
                     absent: data.absent_students(today),
                     all,
                 };
-                page.render().unwrap()
+                data.save();
+                Response::html(page.render().unwrap())
             },
-            (GET) (/pairs/{today: Day}) => {
+            (GET) (/{path: String}/pairs/{today: Day}) => {
+                let data = database::Data::new(&path);
                 let today = data.improve_day(today);
                 let page = TeamView {
+                    path: path.to_string(),
                     today: today,
                     unassigned: data.unassigned_students(today),
                     absent: data.absent_students(today),
                     all: data.team_options(today),
                 };
-                page.render().unwrap()
+                Response::html(page.render().unwrap())
             },
-            (GET) (/sections/{today: Day}) => {
+            (GET) (/{path: String}/sections/{today: Day}) => {
+                let data = database::Data::new(&path);
                 let today = data.improve_day(today);
                 let mut unassigned = data.unassigned_students(today);
                 let absent = data.absent_students(today);
                 unassigned.retain(|s| !absent.contains(s));
                 let zooms = data.get_zooms();
                 let page = SectionView {
+                    path: path.to_string(),
                     today: today,
                     unassigned,
                     absent,
@@ -212,9 +235,10 @@ fn main() {
                         .map(|(sec,stu)| (sec, stu, zooms[&sec]))
                         .collect(),
                 };
-                page.render().unwrap()
+                Response::html(page.render().unwrap())
             },
-            (POST) (/pairs/{today: Day}) => {
+            (POST) (/{path: String}/pairs/{today: Day}) => {
+                let mut data = database::Data::new(&path);
                 let today = data.improve_day(today);
                 if !data.day_unlocked(today) {
                     return Response::text(format!("Cannot modify locked day: {}",
@@ -272,21 +296,26 @@ fn main() {
                     }
                 }
                 let page = TeamView {
+                    path: path.to_string(),
                     today: today,
                     unassigned: data.unassigned_students(today),
                     absent: data.absent_students(today),
                     all: data.team_options(today),
                 };
-                page.render().unwrap()
+                data.save();
+                Response::html(page.render().unwrap())
             },
-            (GET) (/students) => {
+            (GET) (/{path: String}/students) => {
+                let data = database::Data::new(&path);
                 let page = Students {
+                    path: path.to_string(),
                     sections: data.list_students_by_section(),
                     focus_section: Section::from("".to_string()),
                 };
-                page.render().unwrap()
+                Response::html(page.render().unwrap())
             },
-            (POST) (/students) => {
+            (POST) (/{path: String}/students) => {
+                let mut data = database::Data::new(&path);
                 let focus_section;
                 match post_input!(request, {
                     section: String,
@@ -312,18 +341,23 @@ fn main() {
                     }
                 }
                 let page = Students {
+                    path: path.to_string(),
                     sections: data.list_students_by_section(),
                     focus_section: focus_section,
                 };
-                page.render().unwrap()
+                data.save();
+                Response::html(page.render().unwrap())
             },
-            (GET) (/sections) => {
+            (GET) (/{path: String}/sections) => {
+                let data = database::Data::new(&path);
                 let page = Sections {
+                    path: path.to_string(),
                     sections: data.zoom_sections(),
                 };
-                page.render().unwrap()
+                Response::html(page.render().unwrap())
             },
-            (POST) (/sections) => {
+            (POST) (/{path: String}/sections) => {
+                let mut data = database::Data::new(&path);
                 match post_input!(request, {
                     oldname: String,
                     newname: String,
@@ -350,17 +384,22 @@ fn main() {
                     }
                 }
                 let page = Sections {
+                    path: path.to_string(),
                     sections: data.zoom_sections(),
                 };
-                page.render().unwrap()
+                data.save();
+                Response::html(page.render().unwrap())
             },
-            (GET) (/teams) => {
+            (GET) (/{path: String}/teams) => {
+                let data = database::Data::new(&path);
                 let page = Teams {
+                    path: path.to_string(),
                     teams: data.list_teams(),
                 };
-                page.render().unwrap()
+                Response::html(page.render().unwrap())
             },
-            (POST) (/teams) => {
+            (POST) (/{path: String}/teams) => {
+                let mut data = database::Data::new(&path);
                 match post_input!(request, {
                     oldname: String,
                     newname: String,
@@ -381,15 +420,15 @@ fn main() {
                     }
                 }
                 let page = Teams {
+                    path: path.to_string(),
                     teams: data.list_teams(),
                 };
-                page.render().unwrap()
+                data.save();
+                Response::html(page.render().unwrap())
             },
             _ => {
-                format!("Error: {:?}", request)
+                Response::html(format!("Error: {:?}", request))
             },
-        };
-        data.save();
-        Response::html(html)
+        }
     });
 }

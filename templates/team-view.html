@@ -1,13 +1,13 @@
 {% extends "base.html" %}
 
 {% block nav %}
-<li><a href="/day/{{ today.id }}">Student view</a></li>
-<li><a href="/sections/{{ today.id }}">Over view</a></li>
+<li><a href="/{{ path }}/day/{{ today.id }}">Student view</a></li>
+<li><a href="/{{ path }}/sections/{{ today.id }}">Over view</a></li>
 {% endblock %}
 {% block content %}
 <h1>{{ today|safe }}
-  (<a href="/pairs/{{ today.previous().id
-            }}">previous</a>, <a href="/pairs/{{ today.next().id }}">next</a>)
+  (<a href="/{{ path }}/pairs/{{ today.previous().id
+            }}">previous</a>, <a href="/{{ path }}/pairs/{{ today.next().id }}">next</a>)
 </h1>
 
 <form method="post">

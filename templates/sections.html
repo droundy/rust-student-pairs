@@ -1,15 +1,15 @@
 {% extends "base.html" %}
 
 {% block nav %}
-<li><a href="/students">Students</a></li>
-<li><a href="/sections">Sections</a></li>
-<li><a href="/teams">Teams</a></li>
+<li><a href="/{{ path }}/students">Students</a></li>
+<li><a href="/{{ path }}/sections">Sections</a></li>
+<li><a href="/{{ path }}/teams">Teams</a></li>
 {% endblock %}
 {% block content %}
 <ol>
   {% for (s,z) in sections %}
   <li>
-    <form action="/sections" method="post">
+    <form action="/{{ path }}/sections" method="post">
       <input type="hidden" name="oldname" value="{{s.name}}"/>
       <input type="text" name="newname" value="{{s.name}}"/>
       <input type="text" name="newzoom" value="{{z.id}}"/>
@@ -18,7 +18,7 @@
   </li>
   {% endfor %}
   <li>
-    <form action="/sections" method="post">
+    <form action="/{{ path }}/sections" method="post">
       <label for="name">New section:</label>
       <input type="hidden" name="oldname" value=""/>
       <input type="text" name="newname" autofocus/>

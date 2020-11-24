@@ -171,6 +171,8 @@ impl Pairing {
 #[derive(Serialize,Deserialize,Clone,PartialEq,Eq)]
 pub struct Data {
     #[serde(default)]
+    course_path: String,
+    #[serde(default)]
     student_sections: HashMap<Student, Section>,
     #[serde(default)]
     sections: HashMap<Section, Zoom>,
@@ -186,12 +188,12 @@ pub struct Data {
 
 impl Data {
     pub fn save(&self) {
-        let f = AtomicFile::create("pairs.yaml")
+        let f = AtomicFile::create(format!("{}.yaml", self.course_path))
             .expect("error creating save file");
         serde_yaml::to_writer(&f, self).expect("error writing yaml")
     }
-    pub fn new() -> Self {
-        if let Ok(f) = ::std::fs::File::open("pairs.yaml") {
+    pub fn new(path: &str) -> Self {
+        if let Ok(f) = ::std::fs::File::open(format!("{}.yaml", path)) {
             match serde_yaml::from_reader::<_,Self>(&f) {
                 Ok(s) => {
                     return s;
@@ -202,6 +204,7 @@ impl Data {
             }
         }
         Data {
+            course_path: path.to_string(),
             days: Vec::new(),
             sections: HashMap::new(),
             student_sections: HashMap::new(),
