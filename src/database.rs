@@ -193,6 +193,9 @@ impl Data {
         serde_yaml::to_writer(&f, self).expect("error writing yaml")
     }
     pub fn new(path: &str) -> Self {
+        assert!(!path.contains('/'));
+        assert!(!path.contains('.'));
+        assert!(!path.contains('~'));
         if let Ok(f) = ::std::fs::File::open(format!("{}.yaml", path)) {
             match serde_yaml::from_reader::<_,Self>(&f) {
                 Ok(s) => {
