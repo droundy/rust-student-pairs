@@ -15,7 +15,7 @@
       <button name="locked" class="lock{% if day.unlocked %} unlocked{%endif%}" type="submit"></button>
     </form>
     <form action="/{{ path }}/" method="post">
-      <a href="/pairs/{{ day.id }}">{{ day.pretty()|safe }}</a>
+      <a href="/{{ path }}/pairs/{{ day.id }}">{{ day.pretty()|safe }}</a>
       <input type="hidden" name="id" value="{{day.id}}"/>
       <input type="text" name="name" value=""/>
     </form>

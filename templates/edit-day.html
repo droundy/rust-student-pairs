@@ -1,12 +1,12 @@
 {% extends "base.html" %}
 
 {% block nav %}
-          <li><a href="/pairs/{{ today.id }}">Team view</a></li>
-          <li><a href="/sections/{{ today.id }}">Over view</a></li>
+          <li><a href="/{{ path }}/pairs/{{ today.id }}">Team view</a></li>
+          <li><a href="/{{ path }}/sections/{{ today.id }}">Over view</a></li>
 {% endblock %}
 {% block content %}
-<h1>{{ today|safe }} (<a href="/day/{{ today.previous().id
-                               }}">previous</a>, <a href="/day/{{ today.next().id }}">next</a>)</h1>
+<h1>{{ today|safe }} (<a href="/{{ path }}/day/{{ today.previous().id
+                               }}">previous</a>, <a href="/{{ path }}/day/{{ today.next().id }}">next</a>)</h1>
 
 <ol>
   {% for s in all %}
