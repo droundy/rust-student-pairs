@@ -17,7 +17,7 @@
 <ul>
   {% for t in section_team.1 %}
   <li class="teamview">
-    {{ t.team|safe }}:
+    <a href="https://bingley.physics.oregonstate.edu/wbo/boards/pair-{{ t.team|safe}}" target="_blank">{{ t.team|safe }}</a>
     <span class="{% for class in t.primary.tags
                          %}{{class}} {%endfor%}">{{ t.primary.current_string()|safe }}</span>
     <span style="width:0.01pt;font-size:0.001em;color:white;">and</span>
