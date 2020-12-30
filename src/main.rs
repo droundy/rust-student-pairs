@@ -81,7 +81,7 @@ struct Teams {
 }
 impl Teams {
     fn random(&self) -> String {
-        format!("{:02}-{}", self.teams.len()+1, memorable_wordlist::camel_case(33))
+        format!("{:02}-{}", self.teams.len()+1, memorable_wordlist::camel_case(20))
     }
 }
 
@@ -90,7 +90,7 @@ struct NewStudent {
     name: String,
 }
 fn main() {
-    println!("I am running now!!!");
+    println!("I am running now!!! and listening on port 8088");
     rouille::start_server("0.0.0.0:8088", move |request| {
         let is_css = router!{
             request,
