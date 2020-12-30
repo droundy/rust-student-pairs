@@ -68,7 +68,8 @@ impl From<String> for Zoom {
 impl Zoom {
     pub fn url(&self) -> String {
         let clean = self.id.replace(&[' ', '-'][..], "");
-        format!("https://oregonstate.zoom.us/j/{}", clean)
+        clean
+        // format!("https://oregonstate.zoom.us/j/{}", clean)
     }
 }
 
