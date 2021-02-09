@@ -252,31 +252,27 @@ impl Data {
             options.pop()
         }
     }
-    pub fn students_present_in_section(&self, day: Day, _section: Section)
+    pub fn students_present_in_section(&self, day: Day, section: Section)
                                        -> Vec<Student> {
-        // let mut students: Vec<Student> = self.student_sections.iter()
-        //     .filter(|(_,&sec)| sec == section)
-        //     .map(|(&s,_)| s)
-        //     .collect();
-        // for p in self.days[day.id].iter().cloned() {
-        //     if p.section() == Some(section) {
-        //         students.extend(p.present_students());
-        //     } else {
-        //         // If they are in a *different* section *or* are
-        //         // absent, then they are not going to be present in
-        //         // *this* section.
-        //         for s in p.allocated_students().into_iter() {
-        //             remove_student_from_vec(s, &mut students);
-        //         }
-        //     }
-        // }
-        // students.sort();
-        // students.dedup();
+        let mut students: Vec<Student> = self.student_sections.iter()
+            .filter(|(_,&sec)| sec == section)
+            .map(|(&s,_)| s)
+            .collect();
+        for p in self.days[day.id].iter().cloned() {
+            if p.section() == Some(section) {
+                students.extend(p.present_students());
+            } else {
+                // If they are in a *different* section *or* are
+                // absent, then they are not going to be present in
+                // *this* section.
+                for s in p.allocated_students().into_iter() {
+                    remove_student_from_vec(s, &mut students);
+                }
+            }
+        }
+        students.sort();
+        students.dedup();
 
-        // FIXME: This function lies, since with remote teaching and
-        // all sections simultaneous I can move students between
-        // section willy-nilly.
-        let mut students = self.list_students();
         let absent = self.absent_students(day);
         students.retain(|s| !absent.contains(s));
         students
